@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const distDir = path.join(__dirname, "dist");
-const host = process.env.HOST ?? "127.0.0.1";
+const host = process.env.HOST ?? "0.0.0.0";
 const port = Number.parseInt(process.env.PORT ?? "3000", 10);
 let viteServerPromise;
 
@@ -145,6 +145,14 @@ const server = http.createServer(async (request, response) => {
   }
 
   const url = new URL(request.url, `http://${request.headers.host ?? "localhost"}`);
+
+  if (request.method === "GET" && url.pathname === "/healthz") {
+    sendJson(response, 200, {
+      ok: true,
+      anthropicConfigured: Boolean(anthropicApiKey())
+    });
+    return;
+  }
 
   if (request.method === "GET" && url.pathname =="/app-config.js") {
     response.writeHead(200, { "content-type": "application/javascript; charset=utf-8" });

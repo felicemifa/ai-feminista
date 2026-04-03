@@ -8,7 +8,8 @@
     "dev": "dotnet fable watch --noRestore --run npx vite",
     "build": "dotnet fable --noRestore --configuration Release && vite build",
     "preview": "vite preview",
-    "start": "dotnet fable --noRestore --configuration Debug && node --env-file=.env.local server.mjs",
+    "start": "node server.mjs",
+    "start:local": "dotnet fable --noRestore --configuration Debug && node --env-file=.env.local server.mjs",
     "prod": "npm run start"
   },
   "dependencies": {
