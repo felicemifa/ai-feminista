@@ -330,6 +330,14 @@ header {
   line-height: 1.7;
 }
 
+.welcome-description {
+  max-width: 28rem;
+  margin: 0.85rem auto 0;
+  font-size: 0.75rem;
+  line-height: 1.7;
+  color: #b97ed0;
+}
+
 .suggestion-chips {
   display: flex;
   flex-wrap: wrap;

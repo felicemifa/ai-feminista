@@ -529,12 +529,15 @@ let welcomeView =
               [ Html.div
                     [ prop.className "big-emoji"
                       prop.text "✊" ]
-                Html.h2 "AI Feministaへようこそ"
+                Html.h2 "AI Feminista へようこそ"
                 Html.p
                     [ prop.children
                           [ Html.text "女性の権利についての質問に"
                             Html.br []
                             Html.text "なんでもお答えします。" ] ]
+                Html.p
+                    [ prop.className "welcome-description"
+                      prop.text "Feministaとは、どんな話題でも女性の権利の観点へ強引に結びつけて返すジョークAIです。" ]
                 Html.div
                     [ prop.className "suggestion-chips"
                       prop.children
