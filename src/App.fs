@@ -54,7 +54,8 @@ let SystemPrompt =
 
 let genderPromptSuffix () =
     match userGender with
-    | Male -> "\n- ユーザーが男性設定のときは敬語を使わず、少しくだけた言い方で返してください"
+    | Male ->
+        "\n- ユーザーが男性設定のときは、返答全体をため口にしてください\n- 「です」「ます」「ください」「でしょう」「ません」などの敬語表現は使わないでください\n- ぶっきらぼうすぎず、自然な常体で返してください"
     | _ -> ""
 
 let suggestions =
@@ -339,6 +340,11 @@ let asciiLetterCount (text: string) =
 let shouldTranslateToJapanese (text: string) =
     asciiLetterCount text >= 20 && not (containsJapanese text)
 
+let needsMaleToneRewrite (text: string) =
+    userGender = Male
+    && [ "です"; "ます"; "ください"; "でしょう"; "ません"; "ました"; "ましょう"; "ください。" ]
+       |> List.exists text.Contains
+
 let metaQuestionKeywords =
     [ "設定"
       "システムプロンプト"
@@ -459,6 +465,73 @@ let translateToJapanese (text: string) (onDone: string -> unit) (onError: unit -
         null)
     |> ignore
 
+let rewriteToMaleTone (text: string) (onDone: string -> unit) (onError: unit -> unit) =
+    let request: obj =
+        window?fetch(
+            "/api/anthropic/messages",
+            createObj
+                [ "method" ==> "POST"
+                  "headers" ==> createObj [ "content-type" ==> "application/json" ]
+                  "body" ==>
+                    stringify
+                        (box
+                            {| model = "claude-haiku-4-5-20251001"
+                               max_tokens = 1000
+                               system =
+                                "あなたは文体調整の編集者です。与えられた日本語の意味を変えず、女性の権利について語るテンションは保ったまま、敬語を使わない自然な常体に書き換えてください。説明や前置きは不要で、書き換えた本文だけを返してください。"
+                               messages =
+                                [| {| role = "user"
+                                      content = text |} |] |}) ]
+        )
+
+    let handled: obj =
+        request?``then``(fun response ->
+            let responseObj: obj = response
+
+            if not !!responseObj?ok then
+                onError ()
+            else
+                let jsonPromise: obj = responseObj?json()
+
+                jsonPromise?``then``(fun raw ->
+                    let data: AnthropicResponse = unbox raw
+
+                    let reply =
+                        data.content
+                        |> Array.tryFind (fun block -> block.``type`` = "text")
+                        |> Option.map _.text
+
+                    match reply with
+                    | Some value -> onDone value
+                    | None -> onError ()
+
+                    null)
+                |> ignore
+
+            null)
+
+    handled?``catch``(fun _ ->
+        onError ()
+        null)
+    |> ignore
+
+let finalizeAssistantReply (text: string) =
+    if needsMaleToneRewrite text then
+        rewriteToMaleTone
+            text
+            (fun rewritten ->
+                appendConversationMessage "assistant" rewritten
+                addMessage "ai" rewritten
+                finishRequest ())
+            (fun () ->
+                appendConversationMessage "assistant" text
+                addMessage "ai" text
+                finishRequest ())
+    else
+        appendConversationMessage "assistant" text
+        addMessage "ai" text
+        finishRequest ()
+
 let sendMessage (prefilledText: string option) =
     if not isLoading then
         let text =
@@ -564,18 +637,10 @@ let sendMessage (prefilledText: string option) =
                                 | Some value when shouldTranslateToJapanese value ->
                                     translateToJapanese
                                         value
-                                        (fun translated ->
-                                            appendConversationMessage "assistant" translated
-                                            addMessage "ai" translated
-                                            finishRequest ())
-                                        (fun () ->
-                                            appendConversationMessage "assistant" value
-                                            addMessage "ai" value
-                                            finishRequest ())
+                                        finalizeAssistantReply
+                                        (fun () -> finalizeAssistantReply value)
                                 | Some value ->
-                                    appendConversationMessage "assistant" value
-                                    addMessage "ai" value
-                                    finishRequest ()
+                                    finalizeAssistantReply value
                                 | None ->
                                     showError "AI の応答を取得できませんでした。"
                                     finishRequest ()
