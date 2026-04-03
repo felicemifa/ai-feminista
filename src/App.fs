@@ -309,6 +309,35 @@ let pickMetaResponse (text: string) =
     let index = abs (hash text) % metaResponses.Length
     metaResponses[index]
 
+let lowSignalExamples =
+    [ "a"; "aa"; "aaa"; "あ"; "ああ"; "あああ"; "test"; "tes"; "てすと"; "."; ".."; "..."; "w"; "ww"; "www" ]
+
+let isRepeatedSingleChar (text: string) =
+    text.Length >= 2 && text |> Seq.forall ((=) text[0])
+
+let isLowSignalInput (text: string) =
+    let normalized = text.Trim().ToLowerInvariant()
+    normalized.Length <= 1
+    || lowSignalExamples |> List.contains normalized
+    || (normalized.Length <= 3 && isRepeatedSingleChar normalized)
+
+let lowSignalResponse =
+    "もう少し詳しく聞いてもらえると助かります。女性の権利の観点から話をふくらませる材料が、まだ少し足りません。"
+
+let lastUserMessageText () =
+    conversationHistory
+    |> List.rev
+    |> List.tryFind (fun message -> message.Role = "user")
+    |> Option.map _.Text
+
+let isDuplicateUserInput (text: string) =
+    match lastUserMessageText () with
+    | Some previous -> previous = text
+    | None -> false
+
+let duplicateInputResponse =
+    "同じ内容が続いているようです。少し言い換えるか、もう一歩だけ詳しくすると、女性の権利の観点からもっと気持ちよく脱線できます。"
+
 let translateToJapanese (text: string) (onDone: string -> unit) (onError: unit -> unit) =
     let request: obj =
         window?fetch(
@@ -369,6 +398,32 @@ let sendMessage (prefilledText: string option) =
         if text <> "" then
             if not (hasApiKeyConfigured ()) then
                 showError "環境変数 VITE_ANTHROPIC_API_KEY が設定されていません。"
+            elif isLowSignalInput text then
+                clearInput ()
+                addMessage "user" text
+                showTyping ()
+
+                window.setTimeout(
+                    (fun () ->
+                        removeTyping ()
+                        addMessage "ai" lowSignalResponse
+                        finishRequest ()),
+                    220
+                )
+                |> ignore
+            elif isDuplicateUserInput text then
+                clearInput ()
+                addMessage "user" text
+                showTyping ()
+
+                window.setTimeout(
+                    (fun () ->
+                        removeTyping ()
+                        addMessage "ai" duplicateInputResponse
+                        finishRequest ()),
+                    220
+                )
+                |> ignore
             elif isMetaQuestion text then
                 clearInput ()
                 appendConversationMessage "user" text
