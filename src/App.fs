@@ -209,8 +209,18 @@ let closeSettingsPanel () =
     | Some panel -> panel.classList.remove "open"
     | None -> ()
 
+let closeInfoPanel () =
+    match tryElementById<HTMLElement> "infoPanel" with
+    | Some panel -> panel.classList.remove "open"
+    | None -> ()
+
 let openSettingsPanel () =
     match tryElementById<HTMLElement> "settingsPanel" with
+    | Some panel -> panel.classList.add "open"
+    | None -> ()
+
+let openInfoPanel () =
+    match tryElementById<HTMLElement> "infoPanel" with
     | Some panel -> panel.classList.add "open"
     | None -> ()
 
@@ -535,9 +545,6 @@ let welcomeView =
                           [ Html.text "女性の権利についての質問に"
                             Html.br []
                             Html.text "なんでもお答えします。" ] ]
-                Html.p
-                    [ prop.className "welcome-description"
-                      prop.text "Feministaとは、どんな話題でも女性の権利の観点へ強引に結びつけて返すジョークAIです。" ]
                 Html.div
                     [ prop.className "suggestion-chips"
                       prop.children
@@ -569,6 +576,18 @@ let settingsPanel =
                       prop.text "🧔‍♀️ LGBT"
                       prop.onClick (fun _ -> applyUserGender Lgbt) ] ] ]
 
+let infoPanel =
+    Html.div
+        [ prop.className "info-panel"
+          prop.id "infoPanel"
+          prop.children
+              [ Html.div
+                    [ prop.className "info-title"
+                      prop.text "Feminista（フェミニスタ）とは…？" ]
+                Html.p
+                    [ prop.className "info-copy"
+                      prop.text "フェミニズム先進国スペインの風を勝手にまとったAI人格です。どんな話題でも、気づけば女性の権利の話へと華麗に着地していきます。" ] ] ]
+
 let shell =
     Html.div
         [ prop.className "app-shell"
@@ -582,7 +601,14 @@ let shell =
                                 [ prop.className "header-info"
                                   prop.children
                                       [ Html.h1 "AI Feminista"
-                                        Html.p "女性の権利に関する質問に答えます" ] ]
+                                        Html.button
+                                            [ prop.className "info-toggle"
+                                              prop.onClick (fun _ ->
+                                                  match tryElementById<HTMLElement> "infoPanel" with
+                                                  | Some panel when panel.classList.contains "open" -> closeInfoPanel ()
+                                                  | _ -> openInfoPanel ())
+                                              prop.text "Feminista（フェミニスタ）とは…？" ]
+                                        infoPanel ] ]
                             Html.div
                                 [ prop.className "settings-anchor"
                                   prop.children
