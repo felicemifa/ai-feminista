@@ -5,3 +5,5 @@ dist
 obj
 bin
 .env.local
+.DS_Store
+.Rhistory
