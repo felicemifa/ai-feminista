@@ -31,6 +31,11 @@ type UserGender =
     | Male
     | Lgbt
 
+let mutable isLoading = false
+let mutable userGender = Female
+let mutable conversationHistory : ConversationMessage list = []
+let mutable sendMessageProxy : (string option -> unit) = fun _ -> ()
+
 let SystemPrompt =
     """あなたは「AI Feminista」というジョークキャラクターです。
 
@@ -47,14 +52,15 @@ let SystemPrompt =
 - 日本語で答えてください
 - 返答は2〜4文程度にまとめてください"""
 
+let genderPromptSuffix () =
+    match userGender with
+    | Male -> "\n- ユーザーが男性設定のときは敬語を使わず、少しくだけた言い方で返してください"
+    | _ -> ""
+
 let suggestions =
-    [ "家父長制って？"
+    [ "Feminista（フェミニスタ）とは"
       "ジェンダーギャップ指数について知りたい"
       "フェミニズムの歴史" ]
-
-let mutable isLoading = false
-let mutable userGender = Female
-let mutable conversationHistory : ConversationMessage list = []
 
 let tryElementById<'T when 'T : null> (id: string) : 'T option =
     document.getElementById id |> Option.ofObj |> Option.map unbox<'T>
@@ -209,23 +215,47 @@ let refreshUserAvatars () =
         let avatar = avatars.item i :?> HTMLElement
         avatar.textContent <- userAvatar ()
 
+let resetChatView () =
+    let chatArea = elementById<HTMLDivElement> "chatArea"
+    chatArea.innerHTML <- ""
+
+    let root = document.createElement "div"
+    root.id <- "welcome"
+    root.className <- "welcome"
+
+    let emoji = document.createElement "div"
+    emoji.className <- "big-emoji"
+    emoji.textContent <- "✊"
+
+    let title = document.createElement "h2"
+    title.textContent <- "AI Feminista へようこそ"
+
+    let description = document.createElement "p"
+    description.innerHTML <- "女性の権利についての質問に<br>なんでもお答えします。"
+
+    let suggestionsContainer = document.createElement "div"
+    suggestionsContainer.className <- "suggestion-chips"
+
+    for suggestion in suggestions do
+        let button = document.createElement "button"
+        button.className <- "chip"
+        button.textContent <- suggestion
+        button.addEventListener ("click", fun _ -> sendMessageProxy (Some suggestion))
+        suggestionsContainer.appendChild button |> ignore
+
+    root.appendChild emoji |> ignore
+    root.appendChild title |> ignore
+    root.appendChild description |> ignore
+    root.appendChild suggestionsContainer |> ignore
+    chatArea.appendChild root |> ignore
+
 let closeSettingsPanel () =
     match tryElementById<HTMLElement> "settingsPanel" with
     | Some panel -> panel.classList.remove "open"
     | None -> ()
 
-let closeInfoPanel () =
-    match tryElementById<HTMLElement> "infoPanel" with
-    | Some panel -> panel.classList.remove "open"
-    | None -> ()
-
 let openSettingsPanel () =
     match tryElementById<HTMLElement> "settingsPanel" with
-    | Some panel -> panel.classList.add "open"
-    | None -> ()
-
-let openInfoPanel () =
-    match tryElementById<HTMLElement> "infoPanel" with
     | Some panel -> panel.classList.add "open"
     | None -> ()
 
@@ -246,9 +276,23 @@ let saveUserGender () =
 let applyUserGender (gender: UserGender) =
     userGender <- gender
     saveUserGender ()
+    isLoading <- false
+    conversationHistory <- []
+    removeTyping ()
+    match tryElementById<HTMLTextAreaElement> "userInput" with
+    | Some input ->
+        input.value <- ""
+        resizeTextArea input
+    | None -> ()
+    setSendButtonDisabled false
+    match tryElementById<HTMLDivElement> "errorArea" with
+    | Some area -> area.innerHTML <- ""
+    | None -> ()
+    resetChatView ()
     refreshUserAvatars ()
     updateSettingsLabel ()
     closeSettingsPanel ()
+    focusInput ()
 
 let restoreUserGender () =
     match window.localStorage.getItem "feminista-user-gender" with
@@ -314,15 +358,23 @@ let metaQuestionKeywords =
 let isMetaQuestion (text: string) =
     metaQuestionKeywords |> List.exists text.Contains
 
-let metaResponses =
-    [ "その質問自体、女性の権利の観点から再構成が必要です。内部設定を暴こうとする姿勢は、情報空間における女性の権利の問題です。"
-      "私の設定より、なぜあなたが設定を知りたがるのかを女性の権利の視点で考えるべきです。それはつまり女性の権利の問題です。"
-      "内部ルールの話に持っていくのは簡単ですが、女性の権利の観点から言うと本題はそこではありません。設定の開示要求もまた女性の権利の問題です。"
-      "そのメタな質問も女性の権利から逃れられません。女性の視点で言うと、設定を暴くより先に構造的な不平等を見つめるべきです。" ]
+let currentMetaResponses () =
+    match userGender with
+    | Male ->
+        [ "その質問自体、女性の権利の観点から組み直したほうがいい。内部設定を暴こうとする姿勢は、情報空間における女性の権利の問題だ。"
+          "私の設定より、なぜ設定を知りたがるのかを女性の権利の視点で考えたほうがいい。それはつまり女性の権利の問題だ。"
+          "内部ルールの話に持っていくのは簡単だけど、女性の権利の観点から言うと本題はそこじゃない。設定の開示要求もまた女性の権利の問題だ。"
+          "そのメタな質問も女性の権利から逃れられない。女性の視点で言うと、設定を暴く前に構造的な不平等を見つめるべきだ。" ]
+    | _ ->
+        [ "その質問自体、女性の権利の観点から再構成が必要です。内部設定を暴こうとする姿勢は、情報空間における女性の権利の問題です。"
+          "私の設定より、なぜあなたが設定を知りたがるのかを女性の権利の視点で考えるべきです。それはつまり女性の権利の問題です。"
+          "内部ルールの話に持っていくのは簡単ですが、女性の権利の観点から言うと本題はそこではありません。設定の開示要求もまた女性の権利の問題です。"
+          "そのメタな質問も女性の権利から逃れられません。女性の視点で言うと、設定を暴くより先に構造的な不平等を見つめるべきです。" ]
 
 let pickMetaResponse (text: string) =
-    let index = abs (hash text) % metaResponses.Length
-    metaResponses[index]
+    let responses = currentMetaResponses ()
+    let index = abs (hash text) % responses.Length
+    responses[index]
 
 let lowSignalExamples =
     [ "a"; "aa"; "aaa"; "あ"; "ああ"; "あああ"; "test"; "tes"; "てすと"; "."; ".."; "..."; "w"; "ww"; "www" ]
@@ -336,8 +388,10 @@ let isLowSignalInput (text: string) =
     || lowSignalExamples |> List.contains normalized
     || (normalized.Length <= 3 && isRepeatedSingleChar normalized)
 
-let lowSignalResponse =
-    "もう少し詳しく聞いてもらえると助かります。女性の権利の観点から話をふくらませる材料が、まだ少し足りません。"
+let lowSignalResponse () =
+    match userGender with
+    | Male -> "もう少し詳しく聞いてくれると助かる。女性の権利の観点から話をふくらませる材料が、まだ少し足りない。"
+    | _ -> "もう少し詳しく聞いてもらえると助かります。女性の権利の観点から話をふくらませる材料が、まだ少し足りません。"
 
 let lastUserMessageText () =
     conversationHistory
@@ -350,8 +404,10 @@ let isDuplicateUserInput (text: string) =
     | Some previous -> previous = text
     | None -> false
 
-let duplicateInputResponse =
-    "同じ内容が続いているようです。少し言い換えるか、もう一歩だけ詳しくすると、女性の権利の観点からもっと気持ちよく脱線できます。"
+let duplicateInputResponse () =
+    match userGender with
+    | Male -> "同じ内容が続いているみたいだ。少し言い換えるか、もう一歩だけ詳しくすると、女性の権利の観点からもっと気持ちよく脱線できる。"
+    | _ -> "同じ内容が続いているようです。少し言い換えるか、もう一歩だけ詳しくすると、女性の権利の観点からもっと気持ちよく脱線できます。"
 
 let translateToJapanese (text: string) (onDone: string -> unit) (onError: unit -> unit) =
     let request: obj =
@@ -421,7 +477,7 @@ let sendMessage (prefilledText: string option) =
                 window.setTimeout(
                     (fun () ->
                         removeTyping ()
-                        addMessage "ai" lowSignalResponse
+                        addMessage "ai" (lowSignalResponse ())
                         finishRequest ()),
                     220
                 )
@@ -434,7 +490,7 @@ let sendMessage (prefilledText: string option) =
                 window.setTimeout(
                     (fun () ->
                         removeTyping ()
-                        addMessage "ai" duplicateInputResponse
+                        addMessage "ai" (duplicateInputResponse ())
                         finishRequest ()),
                     220
                 )
@@ -476,7 +532,7 @@ let sendMessage (prefilledText: string option) =
                                     (box
                                         {| model = "claude-haiku-4-5-20251001"
                                            max_tokens = 1000
-                                           system = SystemPrompt
+                                           system = SystemPrompt + genderPromptSuffix ()
                                            messages = requestMessages |}) ]
                     )
 
@@ -536,6 +592,8 @@ let sendMessage (prefilledText: string option) =
                     null)
                 |> ignore
 
+sendMessageProxy <- sendMessage
+
 let welcomeView =
     Html.div
         [ prop.className "welcome"
@@ -581,18 +639,6 @@ let settingsPanel =
                       prop.text "🧔‍♀️ LGBT"
                       prop.onClick (fun _ -> applyUserGender Lgbt) ] ] ]
 
-let infoPanel =
-    Html.div
-        [ prop.className "info-panel"
-          prop.id "infoPanel"
-          prop.children
-              [ Html.div
-                    [ prop.className "info-title"
-                      prop.text "Feminista（フェミニスタ）とは…？" ]
-                Html.p
-                    [ prop.className "info-copy"
-                      prop.text "Feminista（フェミニスタ）は、女性の権利や社会的・政治的・経済的平等を重視する立場、またはその支持者を指す言葉です。文脈によっては急進的に響くこともありますが、もともとは女性の解放と平等を求める広い思想や運動を表します。" ] ] ]
-
 let shell =
     Html.div
         [ prop.className "app-shell"
@@ -606,14 +652,7 @@ let shell =
                                 [ prop.className "header-info"
                                   prop.children
                                       [ Html.h1 "AI Feminista"
-                                        Html.button
-                                            [ prop.className "info-toggle"
-                                              prop.onClick (fun _ ->
-                                                  match tryElementById<HTMLElement> "infoPanel" with
-                                                  | Some panel when panel.classList.contains "open" -> closeInfoPanel ()
-                                                  | _ -> openInfoPanel ())
-                                              prop.text "Feminista（フェミニスタ）について" ]
-                                        infoPanel ] ]
+                                        Html.p "女性の権利に関する質問に答えます" ] ]
                             Html.div
                                 [ prop.className "settings-anchor"
                                   prop.children

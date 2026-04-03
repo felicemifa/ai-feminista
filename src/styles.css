@@ -82,55 +82,6 @@ header {
   margin-top: 0.1rem;
 }
 
-.header-info {
-  position: relative;
-}
-
-.info-toggle {
-  margin-top: 0.35rem;
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: var(--text-muted);
-  font-size: 0.72rem;
-  cursor: pointer;
-  text-align: left;
-}
-
-.info-toggle:hover {
-  color: var(--text);
-}
-
-.info-panel {
-  position: absolute;
-  top: calc(100% + 0.8rem);
-  left: 0;
-  width: min(320px, calc(100vw - 3rem));
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 0.9rem;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
-  display: none;
-  z-index: 10;
-}
-
-.info-panel.open {
-  display: block;
-}
-
-.info-title {
-  font-family: "Kaisei Decol", serif;
-  color: var(--accent);
-  margin-bottom: 0.4rem;
-}
-
-.info-copy {
-  font-size: 0.76rem;
-  line-height: 1.6;
-  color: var(--text-muted);
-}
-
 .status {
   margin-left: auto;
   display: flex;
@@ -504,10 +455,6 @@ textarea::placeholder {
   .settings-panel {
     right: -0.25rem;
     width: 200px;
-  }
-
-  .info-panel {
-    width: min(280px, calc(100vw - 2rem));
   }
 
   .chat-area {
