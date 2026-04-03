@@ -58,7 +58,7 @@ let genderPromptSuffix () =
     | _ -> ""
 
 let suggestions =
-    [ "Feminista（フェミニスタ）とは"
+    [ "家父長制って？"
       "ジェンダーギャップ指数について知りたい"
       "フェミニズムの歴史" ]
 
