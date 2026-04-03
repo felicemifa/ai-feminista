@@ -4,6 +4,7 @@
     <LangVersion>preview</LangVersion>
     <RootNamespace>Feminista</RootNamespace>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <NuGetAudit>false</NuGetAudit>
   </PropertyGroup>
 
   <ItemGroup>

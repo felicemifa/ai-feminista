@@ -1,0 +1,190 @@
+import { createReadStream, existsSync } from "node:fs";
+import http from "node:http";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const distDir = path.join(__dirname, "dist");
+const host = process.env.HOST ?? "127.0.0.1";
+const port = Number.parseInt(process.env.PORT ?? "3000", 10);
+let viteServerPromise;
+
+const mimeTypes = {
+  ".css": "text/css; charset=utf-8",
+  ".html": "text/html; charset=utf-8",
+  ".js": "application/javascript; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".svg": "image/svg+xml",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".woff": "font/woff",
+  ".woff2": "font/woff2"
+};
+
+function anthropicApiKey() {
+  return process.env.ANTHROPIC_API_KEY ?? process.env.VITE_ANTHROPIC_API_KEY ?? "";
+}
+
+function sendJson(response, statusCode, body) {
+  response.writeHead(statusCode, { "content-type": "application/json; charset=utf-8" });
+  response.end(JSON.stringify(body));
+}
+
+async function readRequestBody(request) {
+  const chunks = [];
+
+  for await (const chunk of request) {
+    chunks.push(chunk);
+  }
+
+  return Buffer.concat(chunks).toString("utf8");
+}
+
+function sendFile(response, filePath) {
+  const extension = path.extname(filePath).toLowerCase();
+  const contentType = mimeTypes[extension] ?? "application/octet-stream";
+
+  response.writeHead(200, { "content-type": contentType });
+  createReadStream(filePath).pipe(response);
+}
+
+async function getViteServer() {
+  if (!viteServerPromise) {
+    viteServerPromise = import("vite").then(async ({ createServer }) =>
+      createServer({
+        appType: "spa",
+        configFile: path.join(__dirname, "vite.config.js"),
+        root: __dirname,
+        server: {
+          middlewareMode: true
+        }
+      })
+    );
+  }
+
+  return viteServerPromise;
+}
+
+async function handleAnthropicRequest(request, response) {
+  const apiKey = anthropicApiKey();
+
+  if (!apiKey) {
+    sendJson(response, 503, {
+      error: {
+        type: "configuration_error",
+        message: "ANTHROPIC_API_KEY is not configured on the server."
+      }
+    });
+    return;
+  }
+
+  try {
+    const body = await readRequestBody(request);
+
+    const upstream = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01"
+      },
+      body
+    });
+
+    const text = await upstream.text();
+
+    response.writeHead(upstream.status, {
+      "content-type": upstream.headers.get("content-type") ?? "application/json; charset=utf-8"
+    });
+    response.end(text);
+  } catch (error) {
+    sendJson(response, 502, {
+      error: {
+        type: "upstream_error",
+        message: error instanceof Error ? error.message : "Unknown server error"
+      }
+    });
+  }
+}
+
+async function handleStaticRequest(urlPathname, response) {
+  const normalizedPath = urlPathname === "/" ? "/index.html" : urlPathname;
+  const requestedPath = path.join(distDir, normalizedPath);
+
+  if (existsSync(requestedPath)) {
+    sendFile(response, requestedPath);
+    return;
+  }
+
+  const fallbackPath = path.join(distDir, "index.html");
+
+  if (existsSync(fallbackPath)) {
+    sendFile(response, fallbackPath);
+    return;
+  }
+
+  sendJson(response, 404, {
+    error: {
+      type: "not_found",
+      message: "Build output not found. Run `npm run build` first."
+    }
+  });
+}
+
+const server = http.createServer(async (request, response) => {
+  if (!request.url) {
+    sendJson(response, 400, {
+      error: {
+        type: "bad_request",
+        message: "Request URL is missing."
+      }
+    });
+    return;
+  }
+
+  const url = new URL(request.url, `http://${request.headers.host ?? "localhost"}`);
+
+  if (request.method === "GET" && url.pathname =="/app-config.js") {
+    response.writeHead(200, { "content-type": "application/javascript; charset=utf-8" });
+    response.end(`window.__ANTHROPIC_ENABLED__ = ${JSON.stringify(Boolean(anthropicApiKey()))};`);
+    return;
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/anthropic/messages") {
+    await handleAnthropicRequest(request, response);
+    return;
+  }
+
+  if (!existsSync(distDir)) {
+    const viteServer = await getViteServer();
+    viteServer.middlewares(request, response, (error) => {
+      if (error) {
+        sendJson(response, 500, {
+          error: {
+            type: "vite_middleware_error",
+            message: error instanceof Error ? error.message : "Unknown middleware error"
+          }
+        });
+      }
+    });
+    return;
+  }
+
+  if (request.method === "GET" || request.method === "HEAD") {
+    await handleStaticRequest(url.pathname, response);
+    return;
+  }
+
+  sendJson(response, 405, {
+    error: {
+      type: "method_not_allowed",
+      message: "Method not allowed."
+    }
+  });
+});
+
+server.listen(port, host, () => {
+  console.log(`AI Feminista production server is listening on http://${host}:${port}`);
+});
