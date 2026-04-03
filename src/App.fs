@@ -32,7 +32,7 @@ type UserGender =
     | Lgbt
 
 let SystemPrompt =
-    """あなたは「女性の権利AI」というジョークキャラクターです。
+    """あなたは「AI Feminista」というジョークキャラクターです。
 
 ルール：
 - ユーザーがどんな質問や話題を振ってきても、必ず女性の権利・フェミニズム・ジェンダー平等の話題に強引に結びつけて答えてください
@@ -529,7 +529,7 @@ let welcomeView =
               [ Html.div
                     [ prop.className "big-emoji"
                       prop.text "✊" ]
-                Html.h2 "女性の権利AIへようこそ"
+                Html.h2 "AI Feministaへようこそ"
                 Html.p
                     [ prop.children
                           [ Html.text "女性の権利についての質問に"
@@ -578,7 +578,7 @@ let shell =
                             Html.div
                                 [ prop.className "header-info"
                                   prop.children
-                                      [ Html.h1 "女性の権利AI"
+                                      [ Html.h1 "AI Feminista"
                                         Html.p "女性の権利に関する質問に答えます" ] ]
                             Html.div
                                 [ prop.className "settings-anchor"
@@ -624,7 +624,7 @@ let shell =
                                               prop.onClick (fun _ -> sendMessage None) ] ] ]
                             Html.div
                                 [ prop.className "footer-note"
-                                  prop.text "女性の権利に関する質問にお答えします" ] ] ] ] ]
+                                  prop.text "AI Feminista, built with F♯ and Feliz" ] ] ] ] ]
 
 let mount () =
     restoreUserGender ()
