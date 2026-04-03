@@ -1,11 +1,9 @@
 import { defineConfig, loadEnv } from "vite";
-import fable from "vite-plugin-fable";
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
 
   return {
-    plugins: [fable()],
     server: {
       port: 5173,
       proxy: {

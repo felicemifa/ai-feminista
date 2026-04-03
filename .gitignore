@@ -7,3 +7,5 @@ bin
 .env.local
 .DS_Store
 .Rhistory
+*.fs.js
+*.fs.js.map
