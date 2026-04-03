@@ -325,6 +325,13 @@ header {
   align-items: center;
   gap: 4px;
   padding: 0.75rem 1rem;
+  padding-top: 0.35rem;
+}
+
+.typing-label {
+  padding: 0.8rem 1rem 0;
+  font-size: 0.82rem;
+  color: var(--text-muted);
 }
 
 .typing span {

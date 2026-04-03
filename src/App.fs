@@ -145,6 +145,10 @@ let showTyping () =
     let bubble = document.createElement "div"
     bubble.className <- "msg-bubble"
 
+    let label = document.createElement "div"
+    label.className <- "typing-label"
+    label.textContent <- "考え中…"
+
     let typing = document.createElement "div"
     typing.className <- "typing"
 
@@ -152,6 +156,7 @@ let showTyping () =
         let dot = document.createElement "span"
         typing.appendChild dot |> ignore
 
+    bubble.appendChild label |> ignore
     bubble.appendChild typing |> ignore
     message.appendChild avatar |> ignore
     message.appendChild bubble |> ignore
@@ -586,7 +591,7 @@ let infoPanel =
                       prop.text "Feminista（フェミニスタ）とは…？" ]
                 Html.p
                     [ prop.className "info-copy"
-                      prop.text "フェミニズム先進国スペインの風を勝手にまとったAI人格です。どんな話題でも、気づけば女性の権利の話へと華麗に着地していきます。" ] ] ]
+                      prop.text "Feminista（フェミニスタ）は、女性の権利や社会的・政治的・経済的平等を重視する立場、またはその支持者を指す言葉です。文脈によっては急進的に響くこともありますが、もともとは女性の解放と平等を求める広い思想や運動を表します。" ] ] ]
 
 let shell =
     Html.div
@@ -607,7 +612,7 @@ let shell =
                                                   match tryElementById<HTMLElement> "infoPanel" with
                                                   | Some panel when panel.classList.contains "open" -> closeInfoPanel ()
                                                   | _ -> openInfoPanel ())
-                                              prop.text "Feminista（フェミニスタ）とは…？" ]
+                                              prop.text "Feminista（フェミニスタ）について" ]
                                         infoPanel ] ]
                             Html.div
                                 [ prop.className "settings-anchor"
