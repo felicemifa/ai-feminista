@@ -91,6 +91,73 @@ header {
   color: var(--text-muted);
 }
 
+.settings-anchor {
+  margin-left: auto;
+  position: relative;
+}
+
+.settings-toggle {
+  border: 1px solid var(--border);
+  background: rgba(106, 27, 154, 0.18);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 0.45rem 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  cursor: pointer;
+  font-size: 0.78rem;
+}
+
+.settings-value {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
+.settings-panel {
+  position: absolute;
+  top: calc(100% + 0.75rem);
+  right: 0;
+  width: 220px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 0.9rem;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+  display: none;
+  z-index: 10;
+}
+
+.settings-panel.open {
+  display: block;
+}
+
+.settings-title {
+  font-family: "Kaisei Decol", serif;
+  color: var(--accent);
+  margin-bottom: 0.4rem;
+}
+
+.settings-option {
+  width: 100%;
+  text-align: left;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 0.7rem 0.8rem;
+  cursor: pointer;
+  font-size: 0.86rem;
+}
+
+.settings-option + .settings-option {
+  margin-top: 0.55rem;
+}
+
+.settings-option:hover {
+  border-color: var(--accent);
+}
+
 .status-dot {
   width: 8px;
   height: 8px;
@@ -376,6 +443,11 @@ textarea::placeholder {
   .input-area {
     padding-left: 1rem;
     padding-right: 1rem;
+  }
+
+  .settings-panel {
+    right: -0.25rem;
+    width: 200px;
   }
 
   .chat-area {
