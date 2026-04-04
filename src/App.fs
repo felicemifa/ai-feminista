@@ -734,7 +734,7 @@ let settingsPanel =
           prop.children
               [ Html.div
                     [ prop.className "settings-title"
-                      prop.text "ユーザー設定" ]
+                      prop.text "あなたの性別" ]
                 Html.button
                     [ prop.className "settings-option"
                       prop.text "👩 女性"
@@ -791,7 +791,7 @@ let shell =
                                   prop.children
                                       [ Html.textarea
                                             [ prop.id "userInput"
-                                              prop.placeholder "何でも聞いてみてください…"
+                                              prop.placeholder "声を上げてください…"
                                               prop.rows 1
                                               prop.onInput (fun ev ->
                                                   resizeTextArea (unbox ev.target))

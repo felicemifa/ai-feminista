@@ -94,6 +94,8 @@ header {
 .settings-anchor {
   margin-left: auto;
   position: relative;
+  display: flex;
+  align-items: center;
 }
 
 .settings-toggle {
@@ -107,6 +109,7 @@ header {
   gap: 0.55rem;
   cursor: pointer;
   font-size: 0.78rem;
+  line-height: 1;
 }
 
 .settings-value {
