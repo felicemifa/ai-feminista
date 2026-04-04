@@ -472,4 +472,14 @@ textarea::placeholder {
   .message {
     max-width: 92%;
   }
+
+  .suggestion-chips {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .chip {
+    width: min(100%, 280px);
+  }
 }
