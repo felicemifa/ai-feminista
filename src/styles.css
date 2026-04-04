@@ -478,8 +478,4 @@ textarea::placeholder {
     align-items: center;
     gap: 0.6rem;
   }
-
-  .chip {
-    width: min(100%, 280px);
-  }
 }
