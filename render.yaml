@@ -1,10 +1,8 @@
 services:
   - type: web
     name: ai-feminista
-    runtime: node
+    runtime: docker
     plan: free
-    buildCommand: npm install && npm run build
-    startCommand: npm run start
     healthCheckPath: /healthz
     envVars:
       - key: ANTHROPIC_API_KEY
