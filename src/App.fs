@@ -329,8 +329,8 @@ let saveUserGender () =
 
 let inputPlaceholder () =
     match userGender with
-    | Male -> "マンスプレイニングしますか？"
-    | Lgbt -> "理解させましょう"
+    | Male -> "マンスプレイニングを入力…"
+    | Lgbt -> "「理解」させましょう…"
     | Female -> "声を上げてください…"
 
 let updateInputPlaceholder () =
