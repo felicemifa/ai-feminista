@@ -15,6 +15,9 @@ let renderRoot (root: obj) (node: ReactElement) : unit = jsNative
 [<Emit("JSON.stringify($0)")>]
 let stringify (value: obj) : string = jsNative
 
+[<Emit("Date.now()")>]
+let nowMs () : float = jsNative
+
 type AnthropicTextBlock =
     { ``type``: string
       text: string }
@@ -35,6 +38,9 @@ let mutable isLoading = false
 let mutable userGender = Female
 let mutable conversationHistory : ConversationMessage list = []
 let mutable sendMessageProxy : (string option -> unit) = fun _ -> ()
+let mutable typingShownAt = 0.0
+
+let minimumTypingMs = 1000.0
 
 let SystemPrompt =
     """あなたは「AI Feminista」というジョークキャラクターです。
@@ -161,8 +167,15 @@ let anthropicMessagesForRequest (latestUserText: string) =
         (priorMessages |> List.toArray)
         [| box {| role = "user"; content = latestUserText |} |]
 
+let typingLabel () =
+    match userGender with
+    | Female -> "女性活躍中…"
+    | Male -> "社会進出中…"
+    | Lgbt -> "理解増進中…"
+
 let showTyping () =
     removeWelcome ()
+    typingShownAt <- nowMs ()
 
     let chatArea = elementById<HTMLDivElement> "chatArea"
     let message = document.createElement "div"
@@ -178,7 +191,7 @@ let showTyping () =
 
     let label = document.createElement "div"
     label.className <- "typing-label"
-    label.textContent <- "考え中…"
+    label.textContent <- typingLabel ()
 
     let typing = document.createElement "div"
     typing.className <- "typing"
@@ -196,7 +209,9 @@ let showTyping () =
 
 let removeTyping () =
     match tryElementById<HTMLElement> "typingIndicator" with
-    | Some typing -> typing.remove ()
+    | Some typing ->
+        typing.remove ()
+        typingShownAt <- 0.0
     | None -> ()
 
 let showError (message: string) =
@@ -228,10 +243,23 @@ let focusInput () =
     | Some input -> input.focus ()
     | None -> ()
 
-let finishRequest () =
-    isLoading <- false
-    setSendButtonDisabled false
-    focusInput ()
+let finishRequest (afterTyping: unit -> unit) =
+    let remaining =
+        if typingShownAt <= 0.0 then
+            0.0
+        else
+            max 0.0 (minimumTypingMs - (nowMs () - typingShownAt))
+
+    window.setTimeout(
+        (fun () ->
+            removeTyping ()
+            afterTyping ()
+            isLoading <- false
+            setSendButtonDisabled false
+            focusInput ()),
+        int remaining
+    )
+    |> ignore
 
 let refreshUserAvatars () =
     let avatars = document.querySelectorAll ".message.user .msg-avatar"
@@ -547,16 +575,13 @@ let finalizeAssistantReply (text: string) =
             text
             (fun rewritten ->
                 appendConversationMessage "assistant" rewritten
-                addMessage "ai" rewritten
-                finishRequest ())
+                finishRequest (fun () -> addMessage "ai" rewritten))
             (fun () ->
                 appendConversationMessage "assistant" text
-                addMessage "ai" text
-                finishRequest ())
+                finishRequest (fun () -> addMessage "ai" text))
     else
         appendConversationMessage "assistant" text
-        addMessage "ai" text
-        finishRequest ()
+        finishRequest (fun () -> addMessage "ai" text)
 
 let sendMessage (prefilledText: string option) =
     if not isLoading then
@@ -575,9 +600,7 @@ let sendMessage (prefilledText: string option) =
 
                 window.setTimeout(
                     (fun () ->
-                        removeTyping ()
-                        addMessage "ai" (lowSignalResponse ())
-                        finishRequest ()),
+                        finishRequest (fun () -> addMessage "ai" (lowSignalResponse ()))),
                     220
                 )
                 |> ignore
@@ -588,9 +611,7 @@ let sendMessage (prefilledText: string option) =
 
                 window.setTimeout(
                     (fun () ->
-                        removeTyping ()
-                        addMessage "ai" (duplicateInputResponse ())
-                        finishRequest ()),
+                        finishRequest (fun () -> addMessage "ai" (duplicateInputResponse ()))),
                     220
                 )
                 |> ignore
@@ -602,11 +623,9 @@ let sendMessage (prefilledText: string option) =
 
                 window.setTimeout(
                     (fun () ->
-                        removeTyping ()
                         let response = pickMetaResponse text
                         appendConversationMessage "assistant" response
-                        addMessage "ai" response
-                        finishRequest ()),
+                        finishRequest (fun () -> addMessage "ai" response)),
                     220
                 )
                 |> ignore
@@ -638,7 +657,6 @@ let sendMessage (prefilledText: string option) =
 
                 let handled: obj =
                     request?``then``(fun response ->
-                        removeTyping ()
                         let responseObj: obj = response
 
                         if not !!responseObj?ok then
@@ -646,7 +664,7 @@ let sendMessage (prefilledText: string option) =
 
                             bodyPromise?``then``(fun body ->
                                 showError $"API エラー: {responseObj?status} {string body}"
-                                finishRequest ()
+                                finishRequest ignore
                                 null)
                             |> ignore
                         else
@@ -670,7 +688,7 @@ let sendMessage (prefilledText: string option) =
                                     finalizeAssistantReply value
                                 | None ->
                                     showError "AI の応答を取得できませんでした。"
-                                    finishRequest ()
+                                    finishRequest ignore
 
                                 null)
                             |> ignore
@@ -678,9 +696,8 @@ let sendMessage (prefilledText: string option) =
                         null)
 
                 handled?``catch``(fun _ ->
-                    removeTyping ()
                     showError "通信エラーが発生しました。"
-                    finishRequest ()
+                    finishRequest ignore
                     null)
                 |> ignore
 
