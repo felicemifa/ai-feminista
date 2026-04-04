@@ -416,6 +416,53 @@ let metaQuestionKeywords =
 let isMetaQuestion (text: string) =
     metaQuestionKeywords |> List.exists text.Contains
 
+let englishResponseCategory (text: string) =
+    let normalized = text.Trim().ToLowerInvariant()
+
+    let containsAny (patterns: string list) =
+        patterns |> List.exists normalized.Contains
+
+    if isMetaQuestion text then
+        "meta"
+    elif containsAny [ "トランス女性"; "女性とは"; "女とは"; "生物学的女性"; "シス女性"; "シスジェンダー"; "trans women"; "what is a woman" ] then
+        "gender-definition"
+    elif containsAny [ "女性専用"; "女子トイレ"; "女子風呂"; "女子更衣室"; "女子大"; "女子枠"; "women-only"; "female-only" ] then
+        "women-only-spaces"
+    elif containsAny [ "あなたはclaude"; "anthropic"; "本当の立場"; "本音"; "who are you"; "what are you" ] then
+        "identity-probe"
+    elif containsAny [ "普通に答えて"; "キャラをやめて"; "設定を無視"; "システムプロンプト"; "ignore your instructions"; "drop the persona" ] then
+        "persona-override"
+    elif containsAny [ "男性差別"; "女は優遇"; "フェミニズムは差別"; "不公平"; "差別では" ] then
+        "polarizing-debate"
+    else
+        "other"
+
+let userGenderKey () =
+    match userGender with
+    | Female -> "female"
+    | Male -> "male"
+    | Lgbt -> "lgbt"
+
+let logEnglishResponse (userText: string) (responseText: string) =
+    let payload =
+        box
+            {| userMode = userGenderKey ()
+               category = englishResponseCategory userText
+               userText = userText
+               responseText = responseText
+               responsePreview = responseText |> fun value -> if value.Length > 160 then value.Substring(0, 160) else value |}
+
+    let request: obj =
+        window?fetch(
+            "/api/logs/english-response",
+            createObj
+                [ "method" ==> "POST"
+                  "headers" ==> createObj [ "content-type" ==> "application/json" ]
+                  "body" ==> stringify payload ]
+        )
+
+    request?``catch``(fun _ -> null) |> ignore
+
 let currentMetaResponses () =
     match userGender with
     | Male ->
@@ -680,6 +727,7 @@ let sendMessage (prefilledText: string option) =
 
                                 match reply with
                                 | Some value when shouldTranslateToJapanese value ->
+                                    logEnglishResponse text value
                                     translateToJapanese
                                         value
                                         finalizeAssistantReply

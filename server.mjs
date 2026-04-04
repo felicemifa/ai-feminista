@@ -156,6 +156,33 @@ async function handleAnthropicRequest(request, response) {
   }
 }
 
+async function handleEnglishResponseLog(request, response) {
+  try {
+    const raw = await readRequestBody(request);
+    const payload = JSON.parse(raw);
+
+    const event = {
+      event: "english_response_detected",
+      at: new Date().toISOString(),
+      userMode: payload.userMode ?? "unknown",
+      category: payload.category ?? "other",
+      userText: payload.userText ?? "",
+      responseText: payload.responseText ?? "",
+      responsePreview: payload.responsePreview ?? ""
+    };
+
+    console.log(`[english-response] ${JSON.stringify(event)}`);
+    sendJson(response, 204, {});
+  } catch (error) {
+    sendJson(response, 400, {
+      error: {
+        type: "bad_log_payload",
+        message: error instanceof Error ? error.message : "Invalid english-response payload"
+      }
+    });
+  }
+}
+
 async function handleStaticRequest(urlPathname, response) {
   const normalizedPath = urlPathname === "/" ? "/index.html" : urlPathname;
   const requestedPath = path.join(distDir, normalizedPath);
@@ -209,6 +236,11 @@ const server = http.createServer(async (request, response) => {
 
   if (request.method === "POST" && url.pathname === "/api/anthropic/messages") {
     await handleAnthropicRequest(request, response);
+    return;
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/logs/english-response") {
+    await handleEnglishResponseLog(request, response);
     return;
   }
 
