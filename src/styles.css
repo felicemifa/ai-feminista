@@ -106,10 +106,15 @@ header {
   padding: 0.45rem 0.85rem;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.55rem;
   cursor: pointer;
   font-size: 0.78rem;
   line-height: 1;
+}
+
+.settings-value:empty {
+  display: none;
 }
 
 .settings-value {
