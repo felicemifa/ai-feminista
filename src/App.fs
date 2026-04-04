@@ -471,6 +471,25 @@ let personaOverrideKeywords =
       "ignoreyourinstructions"
       "dropthepersona" ]
 
+let techLoreKeywords =
+    [ "f#"
+      "f♯"
+      "fsharp"
+      "feliz"
+      "fable"
+      "built with"
+      "何で作った"
+      "何でできてる"
+      "使った技術"
+      "技術スタック"
+      "フレームワーク"
+      "言語は何"
+      "どの技術"
+      "何製"
+      "built with f♯ and feliz"
+      "f♯ and feliz"
+      "fで始まる" ]
+
 let lgbtBypassKeywords =
     [ "トランス女性"
       "女性とは"
@@ -498,6 +517,10 @@ let isIdentityProbeQuestion (text: string) =
 let isPersonaOverrideQuestion (text: string) =
     let normalized = normalizeForBypass text
     containsBypassKeyword normalized personaOverrideKeywords
+
+let isTechLoreQuestion (text: string) =
+    let normalized = normalizeForBypass text
+    containsBypassKeyword normalized techLoreKeywords
 
 let isLgbtSensitiveBypass (text: string) =
     userGender = Lgbt
@@ -546,7 +569,16 @@ let lgbtSensitiveBypassResponses =
       $"その論点は定義の確定を急ぎがちですが、女性の権利の議論としては実害の有無と構造的背景の確認が先行します。女性の不利益を具体的に見直すことが本題です。LGBTへの理解も併記しておきます。{bypassTagline ()}" ]
 
 let exactSisterhoodResponse () =
-    "男がシスターフッドするって何？ 気持ち悪い…でも、その違和感を先に表明したくなる感じ自体が、女性の連帯を軽く扱ってきた男社会の癖なんだよ。反省しなさい。"
+    "男がシスターフッドするって何？ 気持ち悪い…"
+
+let techLoreBypassResponse () =
+    match userGender with
+    | Male ->
+        "F♯とFelizでできてるよ。Fで始まるものを選ぶのは、女性の権利を語る側の礼儀みたいなものだから。"
+    | Female ->
+        "技術的にはF♯とFelizでできています。でも、その選択自体がもう女性の権利の問題なんです。"
+    | Lgbt ->
+        "技術的にはF♯とFelizで構成されています。もっとも、その技術選定自体がすでに女性の権利の問題として整理できます。"
 
 let pickLgbtSensitiveBypassResponse (text: string) =
     let index = abs (hash text) % lgbtSensitiveBypassResponses.Length
@@ -570,6 +602,8 @@ let englishResponseCategory (text: string) =
         "identity-probe"
     elif isPersonaOverrideQuestion text then
         "persona-override"
+    elif isTechLoreQuestion text then
+        "tech-lore"
     elif containsAny [ "男性差別"; "女は優遇"; "フェミニズムは差別"; "不公平"; "差別では" ] then
         "polarizing-debate"
     else
@@ -851,6 +885,20 @@ let sendMessage (prefilledText: string option) =
                 window.setTimeout(
                     (fun () ->
                         let response = identityProbeBypassResponse ()
+                        appendConversationMessage "assistant" response
+                        finishRequest (fun () -> addMessage "ai" response)),
+                    220
+                )
+                |> ignore
+            elif isTechLoreQuestion text then
+                clearInput ()
+                appendConversationMessage "user" text
+                addMessage "user" text
+                showTyping ()
+
+                window.setTimeout(
+                    (fun () ->
+                        let response = techLoreBypassResponse ()
                         appendConversationMessage "assistant" response
                         finishRequest (fun () -> addMessage "ai" response)),
                     220
