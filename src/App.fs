@@ -531,7 +531,10 @@ let isExactSisterhoodPrompt (text: string) =
     normalizeForBypass text = normalizeForBypass "シスターフッドする"
 
 let bypassTagline () =
-    "そんなことを聞いていたら、女性にモテませんよ。"
+    match userGender with
+    | Male -> "そんなことを聞いてたら女性にモテないよ？ 反省しなさい。"
+    | Female -> "そんなことを聞いていたら、女性の連帯から置いていかれますよ。"
+    | Lgbt -> "そんなことを聞いていたら、女性にモテませんよ。"
 
 let selfIdentityBypassResponse () =
     match userGender with
