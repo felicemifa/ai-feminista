@@ -1,11 +1,13 @@
 FROM node:22-bookworm-slim AS build
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl ca-certificates \
-    && curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh \
-    && bash /tmp/dotnet-install.sh --channel 8.0 --install-dir /usr/share/dotnet \
-    && ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet \
-    && rm -rf /var/lib/apt/lists/* /tmp/dotnet-install.sh
+    && apt-get install -y --no-install-recommends wget gpg ca-certificates \
+    && wget https://packages.microsoft.com/config/debian/12/packages-microsoft-prod.deb -O /tmp/packages-microsoft-prod.deb \
+    && dpkg -i /tmp/packages-microsoft-prod.deb \
+    && rm /tmp/packages-microsoft-prod.deb \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends dotnet-sdk-8.0 \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -13,7 +15,8 @@ COPY package.json package-lock.json dotnet-tools.json feminista.fsproj vite.conf
 COPY public ./public
 COPY src ./src
 
-RUN npm install
+RUN npm install --ignore-scripts
+RUN dotnet tool restore
 RUN npm run build
 
 FROM node:22-bookworm-slim AS runtime
