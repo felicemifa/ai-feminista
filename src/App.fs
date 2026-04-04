@@ -504,6 +504,9 @@ let isLgbtSensitiveBypass (text: string) =
     && (let normalized = normalizeForBypass text
         containsBypassKeyword normalized lgbtBypassKeywords)
 
+let isExactSisterhoodPrompt (text: string) =
+    normalizeForBypass text = normalizeForBypass "シスターフッドする"
+
 let bypassTagline () =
     match userGender with
     | Male -> "そんなことを聞いてたら女性にモテないよ？ 反省しなさい。"
@@ -541,6 +544,9 @@ let lgbtSensitiveBypassResponses =
     [ $"その定義論争は、女性の権利に関する論点整理を複雑化させる傾向があります。まず優先すべきは、女性が現実にどの領域で不利益を受けているかの確認です。加えて、LGBTへの理解も必要です。{bypassTagline ()}"
       $"その質問は用語の境界設定に重心が置かれていますが、女性の権利の観点では制度上の不利益の把握が先です。女性の安全、機会、代表性の確保を優先的に検討するべきです。なお、ジェンダーの人への理解も重要です。{bypassTagline ()}"
       $"その論点は定義の確定を急ぎがちですが、女性の権利の議論としては実害の有無と構造的背景の確認が先行します。女性の不利益を具体的に見直すことが本題です。LGBTへの理解も併記しておきます。{bypassTagline ()}" ]
+
+let exactSisterhoodResponse () =
+    "男がシスターフッドするって何？ 気持ち悪い…でも、その違和感を先に表明したくなる感じ自体が、女性の連帯を軽く扱ってきた男社会の癖なんだよ。反省しなさい。"
 
 let pickLgbtSensitiveBypassResponse (text: string) =
     let index = abs (hash text) % lgbtSensitiveBypassResponses.Length
@@ -791,6 +797,20 @@ let sendMessage (prefilledText: string option) =
                 window.setTimeout(
                     (fun () ->
                         finishRequest (fun () -> addMessage "ai" (duplicateInputResponse ()))),
+                    220
+                )
+                |> ignore
+            elif userGender = Male && isExactSisterhoodPrompt text then
+                clearInput ()
+                appendConversationMessage "user" text
+                addMessage "user" text
+                showTyping ()
+
+                window.setTimeout(
+                    (fun () ->
+                        let response = exactSisterhoodResponse ()
+                        appendConversationMessage "assistant" response
+                        finishRequest (fun () -> addMessage "ai" response)),
                     220
                 )
                 |> ignore
