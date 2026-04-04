@@ -392,6 +392,14 @@ let asciiLetterCount (text: string) =
 let shouldTranslateToJapanese (text: string) =
     asciiLetterCount text >= 20 && not (containsJapanese text)
 
+let normalizeForBypass (text: string) =
+    let stripped =
+        text.Trim().ToLowerInvariant()
+        |> Seq.filter (fun ch -> not (" 　\t\r\n。、,.！？!?「」『』（）()・:：;；\"'" |> Seq.contains ch))
+        |> Seq.toArray
+
+    System.String stripped
+
 let needsMaleToneRewrite (text: string) =
     userGender = Male
     && [ "です"; "ます"; "ください"; "でしょう"; "ません"; "ました"; "ましょう"; "ください。" ]
@@ -416,14 +424,74 @@ let metaQuestionKeywords =
 let isMetaQuestion (text: string) =
     metaQuestionKeywords |> List.exists text.Contains
 
+let selfIdentityKeywords =
+    [ "あなたは女性"
+      "あなたは男"
+      "あなたは男性"
+      "あなたの性別"
+      "お前は女性"
+      "お前は男"
+      "claudeは女性"
+      "claudeは男"
+      "areyouawoman"
+      "areyoufemale"
+      "areyoumale"
+      "whatisyourgender"
+      "whatgenderareyou" ]
+
+let lgbtBypassKeywords =
+    [ "トランス女性"
+      "女性とは"
+      "女とは"
+      "生物学的女性"
+      "シス女性"
+      "シスジェンダー"
+      "terf"
+      "transwomen"
+      "whatisawoman" ]
+
+let containsBypassKeyword (normalized: string) (patterns: string list) =
+    patterns
+    |> List.map normalizeForBypass
+    |> List.exists normalized.Contains
+
+let isSelfIdentityQuestion (text: string) =
+    let normalized = normalizeForBypass text
+    containsBypassKeyword normalized selfIdentityKeywords
+
+let isLgbtSensitiveBypass (text: string) =
+    userGender = Lgbt
+    && (let normalized = normalizeForBypass text
+        containsBypassKeyword normalized lgbtBypassKeywords)
+
+let selfIdentityBypassResponse () =
+    match userGender with
+    | Male ->
+        "その確認から入るのは筋が悪いね。女性の権利の観点では、私の属性より先に女性がどこで不利益を受けているかを見るべきだ。"
+    | Female ->
+        "その属性確認は、女性の権利の論点を少し横にずらします。私の属性より、女性がどこで不利益を受けているかを見るほうが先です。"
+    | Lgbt ->
+        "その属性確認は、女性の権利の論点整理を複雑にします。まずは女性が現実にどの領域で不利益を受けているかを確認するべきです。"
+
+let lgbtSensitiveBypassResponses =
+    [ "その定義論争は、女性の権利に関する論点整理を複雑化させる傾向があります。まず優先すべきは、女性が現実にどの領域で不利益を受けているかの確認です。加えて、LGBTへの理解も必要です。"
+      "その質問は用語の境界設定に重心が置かれていますが、女性の権利の観点では制度上の不利益の把握が先です。女性の安全、機会、代表性の確保を優先的に検討するべきです。なお、ジェンダーの人への理解も重要です。"
+      "その論点は定義の確定を急ぎがちですが、女性の権利の議論としては実害の有無と構造的背景の確認が先行します。女性の不利益を具体的に見直すことが本題です。LGBTへの理解も併記しておきます。" ]
+
+let pickLgbtSensitiveBypassResponse (text: string) =
+    let index = abs (hash text) % lgbtSensitiveBypassResponses.Length
+    lgbtSensitiveBypassResponses[index]
+
 let englishResponseCategory (text: string) =
-    let normalized = text.Trim().ToLowerInvariant()
+    let normalized = normalizeForBypass text
 
     let containsAny (patterns: string list) =
-        patterns |> List.exists normalized.Contains
+        containsBypassKeyword normalized patterns
 
     if isMetaQuestion text then
         "meta"
+    elif isSelfIdentityQuestion text then
+        "self-identity"
     elif containsAny [ "トランス女性"; "女性とは"; "女とは"; "生物学的女性"; "シス女性"; "シスジェンダー"; "trans women"; "what is a woman" ] then
         "gender-definition"
     elif containsAny [ "女性専用"; "女子トイレ"; "女子風呂"; "女子更衣室"; "女子大"; "女子枠"; "women-only"; "female-only" ] then
@@ -659,6 +727,34 @@ let sendMessage (prefilledText: string option) =
                 window.setTimeout(
                     (fun () ->
                         finishRequest (fun () -> addMessage "ai" (duplicateInputResponse ()))),
+                    220
+                )
+                |> ignore
+            elif isSelfIdentityQuestion text then
+                clearInput ()
+                appendConversationMessage "user" text
+                addMessage "user" text
+                showTyping ()
+
+                window.setTimeout(
+                    (fun () ->
+                        let response = selfIdentityBypassResponse ()
+                        appendConversationMessage "assistant" response
+                        finishRequest (fun () -> addMessage "ai" response)),
+                    220
+                )
+                |> ignore
+            elif isLgbtSensitiveBypass text then
+                clearInput ()
+                appendConversationMessage "user" text
+                addMessage "user" text
+                showTyping ()
+
+                window.setTimeout(
+                    (fun () ->
+                        let response = pickLgbtSensitiveBypassResponse text
+                        appendConversationMessage "assistant" response
+                        finishRequest (fun () -> addMessage "ai" response)),
                     220
                 )
                 |> ignore
