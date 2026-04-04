@@ -8,6 +8,9 @@ const __dirname = path.dirname(__filename);
 const distDir = path.join(__dirname, "dist");
 const host = process.env.HOST ?? "0.0.0.0";
 const port = Number.parseInt(process.env.PORT ?? "3000", 10);
+const selfPingEnabled =
+  process.env.SELF_PING_ENABLED === "true"
+  || (process.env.RENDER === "true" && process.env.SELF_PING_ENABLED !== "false");
 let viteServerPromise;
 
 const mimeTypes = {
@@ -48,6 +51,50 @@ function sendFile(response, filePath) {
 
   response.writeHead(200, { "content-type": contentType });
   createReadStream(filePath).pipe(response);
+}
+
+function selfPingTarget() {
+  if (process.env.RENDER_EXTERNAL_URL) {
+    return new URL("/healthz", process.env.RENDER_EXTERNAL_URL).toString();
+  }
+
+  if (selfPingEnabled) {
+    return `http://127.0.0.1:${port}/healthz`;
+  }
+
+  return null;
+}
+
+function scheduleSelfPing() {
+  const target = selfPingTarget();
+
+  if (!selfPingEnabled || !target) {
+    return;
+  }
+
+  const delayMs = (9 + Math.random() * 2) * 60 * 1000;
+  const timer = setTimeout(async () => {
+    try {
+      const response = await fetch(target, {
+        method: "GET",
+        headers: {
+          "cache-control": "no-store"
+        }
+      });
+
+      console.log(`[self-ping] ${response.status} ${target}`);
+    } catch (error) {
+      console.warn(
+        `[self-ping] failed for ${target}: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    } finally {
+      scheduleSelfPing();
+    }
+  }, delayMs);
+
+  if (typeof timer.unref === "function") {
+    timer.unref();
+  }
 }
 
 async function getViteServer() {
@@ -195,4 +242,5 @@ const server = http.createServer(async (request, response) => {
 
 server.listen(port, host, () => {
   console.log(`AI Feminista production server is listening on http://${host}:${port}`);
+  scheduleSelfPing();
 });
