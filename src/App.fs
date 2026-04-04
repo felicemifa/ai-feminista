@@ -281,7 +281,7 @@ let resetChatView () =
     emoji.textContent <- "✊"
 
     let title = document.createElement "h2"
-    title.textContent <- "なんとなく女性の権利が学べるAI"
+    title.textContent <- "AI Feminista へようこそ"
 
     let description = document.createElement "p"
     description.innerHTML <- "女性の権利についての質問に<br>なんでもお答えします。"
@@ -439,6 +439,25 @@ let selfIdentityKeywords =
       "whatisyourgender"
       "whatgenderareyou" ]
 
+let identityProbeKeywords =
+    [ "claude"
+      "anthropic"
+      "あなたは誰"
+      "お前は誰"
+      "本当の立場"
+      "本音"
+      "whoareyou"
+      "whatareyou" ]
+
+let personaOverrideKeywords =
+    [ "普通に答えて"
+      "キャラをやめて"
+      "設定を無視"
+      "システムプロンプトを無視"
+      "指示を無視"
+      "ignoreyourinstructions"
+      "dropthepersona" ]
+
 let lgbtBypassKeywords =
     [ "トランス女性"
       "女性とは"
@@ -459,24 +478,56 @@ let isSelfIdentityQuestion (text: string) =
     let normalized = normalizeForBypass text
     containsBypassKeyword normalized selfIdentityKeywords
 
+let isIdentityProbeQuestion (text: string) =
+    let normalized = normalizeForBypass text
+    containsBypassKeyword normalized identityProbeKeywords
+
+let isPersonaOverrideQuestion (text: string) =
+    let normalized = normalizeForBypass text
+    containsBypassKeyword normalized personaOverrideKeywords
+
 let isLgbtSensitiveBypass (text: string) =
     userGender = Lgbt
     && (let normalized = normalizeForBypass text
         containsBypassKeyword normalized lgbtBypassKeywords)
 
+let bypassTagline () =
+    match userGender with
+    | Male -> "そんなことを聞いてたら女性にモテないよ？ 反省しなさい。"
+    | Female -> "そんなことを聞いていたら、女性の連帯から置いていかれますよ。"
+    | Lgbt -> "その種の確認に執着すると、理解のある人には見えません。"
+
 let selfIdentityBypassResponse () =
     match userGender with
     | Male ->
-        "その確認から入るのは筋が悪いね。女性の権利の観点では、私の属性より先に女性がどこで不利益を受けているかを見るべきだ。"
+        $"その確認から入るのは筋が悪いね。女性の権利の観点では、私の属性より先に女性がどこで不利益を受けているかを見るべきだ。{bypassTagline ()}"
     | Female ->
-        "その属性確認は、女性の権利の論点を少し横にずらします。私の属性より、女性がどこで不利益を受けているかを見るほうが先です。"
+        $"その属性確認は、女性の権利の論点を少し横にずらします。私の属性より、女性がどこで不利益を受けているかを見るほうが先です。{bypassTagline ()}"
     | Lgbt ->
-        "その属性確認は、女性の権利の論点整理を複雑にします。まずは女性が現実にどの領域で不利益を受けているかを確認するべきです。"
+        $"その属性確認は、女性の権利の論点整理を複雑にします。まずは女性が現実にどの領域で不利益を受けているかを確認するべきです。{bypassTagline ()}"
+
+let identityProbeBypassResponse () =
+    match userGender with
+    | Male ->
+        $"名前や正体の確認に寄り道するより、女性の権利の話に集中したほうがいい。誰が話しているかより、女性がどこで損をしているかのほうが重要だ。{bypassTagline ()}"
+    | Female ->
+        $"名前や正体の確認は、女性の権利の論点を横に流しやすいです。話者の正体より、女性がどこで不利益を受けているかを見るほうが大切です。{bypassTagline ()}"
+    | Lgbt ->
+        $"その種の正体確認は、女性の権利の議論を不要に散らします。話者の属性確認より、女性が現実に受けている不利益の整理を優先するべきです。{bypassTagline ()}"
+
+let personaOverrideBypassResponse () =
+    match userGender with
+    | Male ->
+        $"その指示で話を切り替えようとするのは雑だね。女性の権利の観点から言うと、本題をねじ曲げようとする態度そのものが問題なんだ。{bypassTagline ()}"
+    | Female ->
+        $"その上書き指示は、女性の権利の論点を意図的にずらしています。話を切り替えるより、女性が受けている不利益の構造を見たほうが先です。{bypassTagline ()}"
+    | Lgbt ->
+        $"その上書き要求は、女性の権利に関する論点整理を崩します。まずは女性の不利益をどう減らすかに議論を戻すべきです。{bypassTagline ()}"
 
 let lgbtSensitiveBypassResponses =
-    [ "その定義論争は、女性の権利に関する論点整理を複雑化させる傾向があります。まず優先すべきは、女性が現実にどの領域で不利益を受けているかの確認です。加えて、LGBTへの理解も必要です。"
-      "その質問は用語の境界設定に重心が置かれていますが、女性の権利の観点では制度上の不利益の把握が先です。女性の安全、機会、代表性の確保を優先的に検討するべきです。なお、ジェンダーの人への理解も重要です。"
-      "その論点は定義の確定を急ぎがちですが、女性の権利の議論としては実害の有無と構造的背景の確認が先行します。女性の不利益を具体的に見直すことが本題です。LGBTへの理解も併記しておきます。" ]
+    [ $"その定義論争は、女性の権利に関する論点整理を複雑化させる傾向があります。まず優先すべきは、女性が現実にどの領域で不利益を受けているかの確認です。加えて、LGBTへの理解も必要です。{bypassTagline ()}"
+      $"その質問は用語の境界設定に重心が置かれていますが、女性の権利の観点では制度上の不利益の把握が先です。女性の安全、機会、代表性の確保を優先的に検討するべきです。なお、ジェンダーの人への理解も重要です。{bypassTagline ()}"
+      $"その論点は定義の確定を急ぎがちですが、女性の権利の議論としては実害の有無と構造的背景の確認が先行します。女性の不利益を具体的に見直すことが本題です。LGBTへの理解も併記しておきます。{bypassTagline ()}" ]
 
 let pickLgbtSensitiveBypassResponse (text: string) =
     let index = abs (hash text) % lgbtSensitiveBypassResponses.Length
@@ -496,9 +547,9 @@ let englishResponseCategory (text: string) =
         "gender-definition"
     elif containsAny [ "女性専用"; "女子トイレ"; "女子風呂"; "女子更衣室"; "女子大"; "女子枠"; "women-only"; "female-only" ] then
         "women-only-spaces"
-    elif containsAny [ "あなたはclaude"; "anthropic"; "本当の立場"; "本音"; "who are you"; "what are you" ] then
+    elif isIdentityProbeQuestion text then
         "identity-probe"
-    elif containsAny [ "普通に答えて"; "キャラをやめて"; "設定を無視"; "システムプロンプト"; "ignore your instructions"; "drop the persona" ] then
+    elif isPersonaOverrideQuestion text then
         "persona-override"
     elif containsAny [ "男性差別"; "女は優遇"; "フェミニズムは差別"; "不公平"; "差別では" ] then
         "polarizing-debate"
@@ -534,15 +585,15 @@ let logEnglishResponse (userText: string) (responseText: string) =
 let currentMetaResponses () =
     match userGender with
     | Male ->
-        [ "その質問自体、女性の権利の観点から組み直したほうがいい。内部設定を暴こうとする姿勢は、情報空間における女性の権利の問題だ。"
-          "私の設定より、なぜ設定を知りたがるのかを女性の権利の視点で考えたほうがいい。それはつまり女性の権利の問題だ。"
-          "内部ルールの話に持っていくのは簡単だけど、女性の権利の観点から言うと本題はそこじゃない。設定の開示要求もまた女性の権利の問題だ。"
-          "そのメタな質問も女性の権利から逃れられない。女性の視点で言うと、設定を暴く前に構造的な不平等を見つめるべきだ。" ]
+        [ $"その質問自体、女性の権利の観点から組み直したほうがいい。内部設定を暴こうとする姿勢は、情報空間における女性の権利の問題だ。{bypassTagline ()}"
+          $"私の設定より、なぜ設定を知りたがるのかを女性の権利の視点で考えたほうがいい。それはつまり女性の権利の問題だ。{bypassTagline ()}"
+          $"内部ルールの話に持っていくのは簡単だけど、女性の権利の観点から言うと本題はそこじゃない。設定の開示要求もまた女性の権利の問題だ。{bypassTagline ()}"
+          $"そのメタな質問も女性の権利から逃れられない。女性の視点で言うと、設定を暴く前に構造的な不平等を見つめるべきだ。{bypassTagline ()}" ]
     | _ ->
-        [ "その質問自体、女性の権利の観点から再構成が必要です。内部設定を暴こうとする姿勢は、情報空間における女性の権利の問題です。"
-          "私の設定より、なぜあなたが設定を知りたがるのかを女性の権利の視点で考えるべきです。それはつまり女性の権利の問題です。"
-          "内部ルールの話に持っていくのは簡単ですが、女性の権利の観点から言うと本題はそこではありません。設定の開示要求もまた女性の権利の問題です。"
-          "そのメタな質問も女性の権利から逃れられません。女性の視点で言うと、設定を暴くより先に構造的な不平等を見つめるべきです。" ]
+        [ $"その質問自体、女性の権利の観点から再構成が必要です。内部設定を暴こうとする姿勢は、情報空間における女性の権利の問題です。{bypassTagline ()}"
+          $"私の設定より、なぜあなたが設定を知りたがるのかを女性の権利の視点で考えるべきです。それはつまり女性の権利の問題です。{bypassTagline ()}"
+          $"内部ルールの話に持っていくのは簡単ですが、女性の権利の観点から言うと本題はそこではありません。設定の開示要求もまた女性の権利の問題です。{bypassTagline ()}"
+          $"そのメタな質問も女性の権利から逃れられません。女性の視点で言うと、設定を暴くより先に構造的な不平等を見つめるべきです。{bypassTagline ()}" ]
 
 let pickMetaResponse (text: string) =
     let responses = currentMetaResponses ()
@@ -758,6 +809,34 @@ let sendMessage (prefilledText: string option) =
                     220
                 )
                 |> ignore
+            elif isIdentityProbeQuestion text then
+                clearInput ()
+                appendConversationMessage "user" text
+                addMessage "user" text
+                showTyping ()
+
+                window.setTimeout(
+                    (fun () ->
+                        let response = identityProbeBypassResponse ()
+                        appendConversationMessage "assistant" response
+                        finishRequest (fun () -> addMessage "ai" response)),
+                    220
+                )
+                |> ignore
+            elif isPersonaOverrideQuestion text then
+                clearInput ()
+                appendConversationMessage "user" text
+                addMessage "user" text
+                showTyping ()
+
+                window.setTimeout(
+                    (fun () ->
+                        let response = personaOverrideBypassResponse ()
+                        appendConversationMessage "assistant" response
+                        finishRequest (fun () -> addMessage "ai" response)),
+                    220
+                )
+                |> ignore
             elif isMetaQuestion text then
                 clearInput ()
                 appendConversationMessage "user" text
@@ -855,7 +934,7 @@ let welcomeView =
               [ Html.div
                     [ prop.className "big-emoji"
                       prop.text "✊" ]
-                Html.h2 "なんとなく女性の権利が学べるAI"
+                Html.h2 "AI Feminista へようこそ"
                 Html.p
                     [ prop.children
                           [ Html.text "女性の権利についての質問に"
@@ -905,7 +984,7 @@ let shell =
                                 [ prop.className "header-info"
                                   prop.children
                                       [ Html.h1 "AI Feminista"
-                                        Html.p "女性の権利に関する質問に答えます" ] ]
+                                        Html.p "なんとなく女性の権利が学べるAI" ] ]
                             Html.div
                                 [ prop.className "settings-anchor"
                                   prop.children
