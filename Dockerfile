@@ -17,6 +17,7 @@ COPY src ./src
 
 RUN npm install --ignore-scripts
 RUN dotnet tool restore
+RUN dotnet restore feminista.fsproj
 RUN npm run build
 
 FROM node:22-bookworm-slim AS runtime
