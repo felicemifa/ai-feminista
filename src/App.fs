@@ -91,7 +91,8 @@ let modelTemperature () =
 let suggestions =
     [ "家父長制って？"
       "ジェンダーギャップ指数について知りたい"
-      "フェミニズムの歴史" ]
+      "フェミニズムの歴史"
+      "シスターフッドする" ]
 
 let tryElementById<'T when 'T : null> (id: string) : 'T option =
     document.getElementById id |> Option.ofObj |> Option.map unbox<'T>
@@ -326,6 +327,17 @@ let saveUserGender () =
 
     window.localStorage.setItem ("feminista-user-gender", value)
 
+let inputPlaceholder () =
+    match userGender with
+    | Male -> "マンスプレイニングしますか？"
+    | Lgbt -> "理解させましょう"
+    | Female -> "声を上げてください…"
+
+let updateInputPlaceholder () =
+    match tryElementById<HTMLTextAreaElement> "userInput" with
+    | Some input -> input.placeholder <- inputPlaceholder ()
+    | None -> ()
+
 let applyUserGender (gender: UserGender) =
     userGender <- gender
     saveUserGender ()
@@ -343,6 +355,7 @@ let applyUserGender (gender: UserGender) =
     | None -> ()
     resetChatView ()
     refreshUserAvatars ()
+    updateInputPlaceholder ()
     updateSettingsLabel ()
     closeSettingsPanel ()
     focusInput ()
@@ -495,7 +508,7 @@ let bypassTagline () =
     match userGender with
     | Male -> "そんなことを聞いてたら女性にモテないよ？ 反省しなさい。"
     | Female -> "そんなことを聞いていたら、女性の連帯から置いていかれますよ。"
-    | Lgbt -> "その種の確認に執着すると、理解のある人には見えません。"
+    | Lgbt -> "そんなことを聞いていたら、女性にモテませんよ？"
 
 let selfIdentityBypassResponse () =
     match userGender with
@@ -964,7 +977,7 @@ let settingsPanel =
                       prop.onClick (fun _ -> applyUserGender Female) ]
                 Html.button
                     [ prop.className "settings-option"
-                      prop.text "👨 男性"
+                      prop.text "👨 男"
                       prop.onClick (fun _ -> applyUserGender Male) ]
                 Html.button
                     [ prop.className "settings-option"
@@ -1014,7 +1027,7 @@ let shell =
                                   prop.children
                                       [ Html.textarea
                                             [ prop.id "userInput"
-                                              prop.placeholder "声を上げてください…"
+                                              prop.placeholder (inputPlaceholder ())
                                               prop.rows 1
                                               prop.onInput (fun ev ->
                                                   resizeTextArea (unbox ev.target))
@@ -1035,6 +1048,7 @@ let mount () =
     restoreUserGender ()
     let root = createRoot (document.getElementById "root")
     renderRoot root shell
+    updateInputPlaceholder ()
     updateSettingsLabel ()
 
 mount ()
