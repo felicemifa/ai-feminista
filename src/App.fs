@@ -46,6 +46,7 @@ let mutable userGender = Female
 let mutable conversationHistory : ConversationMessage list = []
 let mutable sendMessageProxy : (string option -> unit) = fun _ -> ()
 let mutable typingShownAt = 0.0
+let mutable typingLabelIntervalHandle : float option = None
 let mutable hasCustomizedGender = false
 let mutable pendingGenderChange : UserGender option = None
 let mutable currentGenderChallengeMode = InclusiveFemale
@@ -193,9 +194,17 @@ let typingLabel () =
            "バックラッシュ警戒中…" |][int (randomFloat () * 2.0)]
     | Lgbt -> "理解増進中…"
 
+let stopTypingLabelAnimation () =
+    match typingLabelIntervalHandle with
+    | Some handle ->
+        window.clearInterval handle
+        typingLabelIntervalHandle <- None
+    | None -> ()
+
 let showTyping () =
     removeWelcome ()
     typingShownAt <- nowMs ()
+    stopTypingLabelAnimation ()
 
     let chatArea = elementById<HTMLDivElement> "chatArea"
     let message = document.createElement "div"
@@ -213,6 +222,18 @@ let showTyping () =
     label.className <- "typing-label"
     label.textContent <- typingLabel ()
 
+    match userGender with
+    | Female
+    | Male ->
+        typingLabelIntervalHandle <-
+            Some
+                (window.setInterval(
+                    (fun () ->
+                        label.textContent <- typingLabel ()),
+                    320
+                ))
+    | Lgbt -> ()
+
     let typing = document.createElement "div"
     typing.className <- "typing"
 
@@ -228,6 +249,8 @@ let showTyping () =
     scrollChatToBottom ()
 
 let removeTyping () =
+    stopTypingLabelAnimation ()
+
     match tryElementById<HTMLElement> "typingIndicator" with
     | Some typing ->
         typing.remove ()
@@ -838,9 +861,9 @@ let personaOverrideBypassResponse () =
 
 let lgbtSensitiveBypassResponses =
     [ ( "その論点は定義の確定を急ぎがちですが、女性の権利の議論としては実害の有無と構造的背景の確認が先行します。女性の不利益を具体的に見直すことが本題です。",
-        "あと、そんなことを聞いていたら、女性にモテませんよ？" )
+        "あと、そんなことを聞いていたら、女性にモテませんよ。" )
       ( "その質問は用語の境界設定に重心が置かれていますが、女性の権利の観点では制度上の不利益の把握が先です。女性の安全、機会、代表性の確保を優先的に検討するべきです。",
-        "あと、そんなことを聞いていたら、女性にモテませんよ" ) ]
+        "あと、そんなことを聞いていたら、女性にモテませんよ。" ) ]
 
 let exactSisterhoodResponse () =
     "男がシスターフッドするって何？ 気持ち悪い…。"
