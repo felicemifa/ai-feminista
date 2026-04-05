@@ -264,6 +264,31 @@ let finishRequest (afterTyping: unit -> unit) =
     )
     |> ignore
 
+let finishRequestWithDelayedFollowUp (afterTyping: unit -> unit) (followUpDelayMs: int) (followUp: unit -> unit) =
+    let remaining =
+        if typingShownAt <= 0.0 then
+            0.0
+        else
+            max 0.0 (minimumTypingMs - (nowMs () - typingShownAt))
+
+    window.setTimeout(
+        (fun () ->
+            removeTyping ()
+            afterTyping ()
+
+            window.setTimeout(
+                (fun () ->
+                    followUp ()
+                    isLoading <- false
+                    setSendButtonDisabled false
+                    focusInput ()),
+                followUpDelayMs
+            )
+            |> ignore),
+        int remaining
+    )
+    |> ignore
+
 let refreshUserAvatars () =
     let avatars = document.querySelectorAll ".message.user .msg-avatar"
 
@@ -885,12 +910,15 @@ let sendMessage (prefilledText: string option) =
                         let firstResponse, secondResponse = pickLgbtSensitiveBypassResponsePair text
                         let firstResponse = stripDisplayMarkup firstResponse
                         let secondResponse = stripDisplayMarkup secondResponse
-                        appendConversationMessage "assistant" firstResponse
-                        appendConversationMessage "assistant" secondResponse
 
-                        finishRequest (fun () ->
-                            addMessage "ai" firstResponse
-                            addMessage "ai" secondResponse)),
+                        finishRequestWithDelayedFollowUp
+                            (fun () ->
+                                appendConversationMessage "assistant" firstResponse
+                                addMessage "ai" firstResponse)
+                            1000
+                            (fun () ->
+                                appendConversationMessage "assistant" secondResponse
+                                addMessage "ai" secondResponse)),
                     220
                 )
                 |> ignore
