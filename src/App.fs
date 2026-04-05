@@ -526,6 +526,7 @@ let techLoreKeywords =
       "fsharp"
       "feliz"
       "fable"
+      "チャッピー"
       "built with"
       "何で作った"
       "何でできてる"
@@ -624,7 +625,7 @@ let lgbtSensitiveBypassResponses =
         "あと、そんなことを聞いていたら、女性にモテませんよ" ) ]
 
 let exactSisterhoodResponse () =
-    "男がシスターフッドするって何？ 気持ち悪い…"
+    "男がシスターフッドするって何？ 気持ち悪い…。"
 
 let techLoreBypassResponse () =
     match userGender with
