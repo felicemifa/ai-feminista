@@ -345,8 +345,29 @@ let openSettingsPanel () =
 
 let updateSettingsLabel () =
     match tryElementById<HTMLElement> "settingsValue" with
-    | Some label -> label.textContent <- ""
+    | Some label ->
+        label.textContent <-
+            match userGender with
+            | Female -> "女性"
+            | Male -> "男"
+            | Lgbt -> "LGBT"
     | None -> ()
+
+let updateSettingsSelection () =
+    let updateOption (id: string) (isSelected: bool) =
+        match tryElementById<HTMLButtonElement> id with
+        | Some button ->
+            button.disabled <- isSelected
+
+            if isSelected then
+                button.classList.add "current"
+            else
+                button.classList.remove "current"
+        | None -> ()
+
+    updateOption "settingsOptionFemale" (userGender = Female)
+    updateOption "settingsOptionMale" (userGender = Male)
+    updateOption "settingsOptionLgbt" (userGender = Lgbt)
 
 let saveUserGender () =
     let value =
@@ -369,26 +390,31 @@ let updateInputPlaceholder () =
     | None -> ()
 
 let applyUserGender (gender: UserGender) =
-    userGender <- gender
-    saveUserGender ()
-    isLoading <- false
-    conversationHistory <- []
-    removeTyping ()
-    match tryElementById<HTMLTextAreaElement> "userInput" with
-    | Some input ->
-        input.value <- ""
-        resizeTextArea input
-    | None -> ()
-    setSendButtonDisabled false
-    match tryElementById<HTMLDivElement> "errorArea" with
-    | Some area -> area.innerHTML <- ""
-    | None -> ()
-    resetChatView ()
-    refreshUserAvatars ()
-    updateInputPlaceholder ()
-    updateSettingsLabel ()
-    closeSettingsPanel ()
-    focusInput ()
+    if userGender = gender then
+        closeSettingsPanel ()
+        focusInput ()
+    else
+        userGender <- gender
+        saveUserGender ()
+        isLoading <- false
+        conversationHistory <- []
+        removeTyping ()
+        match tryElementById<HTMLTextAreaElement> "userInput" with
+        | Some input ->
+            input.value <- ""
+            resizeTextArea input
+        | None -> ()
+        setSendButtonDisabled false
+        match tryElementById<HTMLDivElement> "errorArea" with
+        | Some area -> area.innerHTML <- ""
+        | None -> ()
+        resetChatView ()
+        refreshUserAvatars ()
+        updateInputPlaceholder ()
+        updateSettingsLabel ()
+        updateSettingsSelection ()
+        closeSettingsPanel ()
+        focusInput ()
 
 let restoreUserGender () =
     match window.localStorage.getItem "feminista-user-gender" with
@@ -1129,15 +1155,18 @@ let settingsPanel =
                     [ prop.className "settings-title"
                       prop.text "あなたの性別" ]
                 Html.button
-                    [ prop.className "settings-option"
+                    [ prop.id "settingsOptionFemale"
+                      prop.className "settings-option"
                       prop.text "👩 女性"
                       prop.onClick (fun _ -> applyUserGender Female) ]
                 Html.button
-                    [ prop.className "settings-option"
+                    [ prop.id "settingsOptionMale"
+                      prop.className "settings-option"
                       prop.text "👨 男"
                       prop.onClick (fun _ -> applyUserGender Male) ]
                 Html.button
-                    [ prop.className "settings-option"
+                    [ prop.id "settingsOptionLgbt"
+                      prop.className "settings-option"
                       prop.text "🧔‍♀️ LGBT"
                       prop.onClick (fun _ -> applyUserGender Lgbt) ] ] ]
 
@@ -1208,5 +1237,6 @@ let mount () =
     renderRoot root shell
     updateInputPlaceholder ()
     updateSettingsLabel ()
+    updateSettingsSelection ()
 
 mount ()
