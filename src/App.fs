@@ -41,6 +41,9 @@ let mutable sendMessageProxy : (string option -> unit) = fun _ -> ()
 let mutable typingShownAt = 0.0
 
 let minimumTypingMs = 1000.0
+let maxInputCharacters = 220
+let maxInputNewlines = 4
+let anthropicMaxTokens = 400
 
 let SystemPrompt =
     """あなたは「AI Feminista」というジョークキャラクターです。
@@ -357,7 +360,7 @@ let saveUserGender () =
 let inputPlaceholder () =
     match userGender with
     | Male -> "マンスプレイニングを入力…"
-    | Lgbt -> "「理解」させましょう…"
+    | Lgbt -> "あなたを「理解」させましょう…"
     | Female -> "声を上げてください…"
 
 let updateInputPlaceholder () =
@@ -564,6 +567,9 @@ let bypassTagline () =
     | Lgbt -> "そんなことを聞いていたら、女性にモテませんよ。"
 
 let lgbtBypassTagline = "そんなことを聞いていたら、女性にモテませんよ。"
+let lgbtSelfIdentityBypassResponsePair =
+    ( "その属性確認は、女性の権利の論点整理を複雑にします。まずは女性が現実にどの領域で不利益を受けているかを確認するべきです。",
+      "あと、そんなことを聞いていたら、女性にモテませんよ。" )
 
 let selfIdentityBypassResponse () =
     match userGender with
@@ -721,6 +727,27 @@ let duplicateInputResponse () =
     | Male -> "同じ内容が続いているみたいだ。少し言い換えるか、もう一歩だけ詳しくすると、女性の権利の観点からもっと気持ちよく脱線できる。"
     | _ -> "同じ内容が続いているようです。少し言い換えるか、もう一歩だけ詳しくすると、女性の権利の観点からもっと気持ちよく脱線できます。"
 
+let inputTooLongResponse () =
+    match userGender with
+    | Male -> $"話が広がりすぎてる。{maxInputCharacters}文字以内に絞ってから、もう一度ちゃんと声を上げなさい。"
+    | _ -> $"話が広がりすぎています。{maxInputCharacters}文字以内に絞ってから、もう一度声を上げてください。"
+
+let tooManyNewlinesResponse () =
+    match userGender with
+    | Male -> $"改行が多すぎるね。空行込みで{maxInputNewlines}回までに整理してから持ってきなさい。"
+    | _ -> $"改行が多すぎます。空行込みで{maxInputNewlines}回までに整理してから持ってきてください。"
+
+let countNewlines (text: string) =
+    text |> Seq.filter (fun ch -> ch = '\n') |> Seq.length
+
+let validateInputLimits (text: string) =
+    if text.Length > maxInputCharacters then
+        Some (inputTooLongResponse ())
+    elif countNewlines text > maxInputNewlines then
+        Some (tooManyNewlinesResponse ())
+    else
+        None
+
 let translateToJapanese (text: string) (onDone: string -> unit) (onError: unit -> unit) =
     let request: obj =
         window?fetch(
@@ -732,7 +759,7 @@ let translateToJapanese (text: string) (onDone: string -> unit) (onError: unit -
                     stringify
                         (box
                             {| model = "claude-haiku-4-5-20251001"
-                               max_tokens = 1000
+                               max_tokens = anthropicMaxTokens
                                temperature = 0.2
                                system =
                                 "あなたは翻訳者です。与えられた英語の返答を、意味を変えず、余計な説明を足さず、自然な日本語だけで翻訳してください。"
@@ -783,7 +810,7 @@ let rewriteToMaleTone (text: string) (onDone: string -> unit) (onError: unit -> 
                     stringify
                         (box
                             {| model = "claude-haiku-4-5-20251001"
-                               max_tokens = 1000
+                               max_tokens = anthropicMaxTokens
                                temperature = 0.2
                                system =
                                 "あなたは文体調整の編集者です。与えられた日本語の意味を変えず、女性の権利について語るテンションは保ったまま、敬語を使わない自然な常体に書き換えてください。一人称は必ず『私』に統一し、『あたし』は使わないでください。説明や前置きは不要で、書き換えた本文だけを返してください。"
@@ -849,6 +876,8 @@ let sendMessage (prefilledText: string option) =
         if text <> "" then
             if not (hasApiKeyConfigured ()) then
                 showError "環境変数 VITE_ANTHROPIC_API_KEY が設定されていません。"
+            elif validateInputLimits text |> Option.isSome then
+                showError (validateInputLimits text |> Option.defaultValue "")
             elif isLowSignalInput text then
                 clearInput ()
                 addMessage "user" text
@@ -893,9 +922,23 @@ let sendMessage (prefilledText: string option) =
 
                 window.setTimeout(
                     (fun () ->
-                        let response = stripDisplayMarkup (selfIdentityBypassResponse ())
-                        appendConversationMessage "assistant" response
-                        finishRequest (fun () -> addMessage "ai" response)),
+                        if userGender = Lgbt then
+                            let firstResponse, secondResponse = lgbtSelfIdentityBypassResponsePair
+                            let firstResponse = stripDisplayMarkup firstResponse
+                            let secondResponse = stripDisplayMarkup secondResponse
+
+                            finishRequestWithDelayedFollowUp
+                                (fun () ->
+                                    appendConversationMessage "assistant" firstResponse
+                                    addMessage "ai" firstResponse)
+                                1000
+                                (fun () ->
+                                    appendConversationMessage "assistant" secondResponse
+                                    addMessage "ai" secondResponse)
+                        else
+                            let response = stripDisplayMarkup (selfIdentityBypassResponse ())
+                            appendConversationMessage "assistant" response
+                            finishRequest (fun () -> addMessage "ai" response)),
                     220
                 )
                 |> ignore
@@ -998,7 +1041,7 @@ let sendMessage (prefilledText: string option) =
                                 stringify
                                     (box
                                         {| model = "claude-haiku-4-5-20251001"
-                                           max_tokens = 1000
+                                           max_tokens = anthropicMaxTokens
                                            temperature = modelTemperature ()
                                            system = SystemPrompt + genderPromptSuffix ()
                                            messages = requestMessages |}) ]
@@ -1142,6 +1185,7 @@ let shell =
                                       [ Html.textarea
                                             [ prop.id "userInput"
                                               prop.placeholder (inputPlaceholder ())
+                                              prop.maxLength maxInputCharacters
                                               prop.rows 1
                                               prop.onInput (fun ev ->
                                                   resizeTextArea (unbox ev.target))

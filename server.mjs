@@ -8,10 +8,13 @@ const __dirname = path.dirname(__filename);
 const distDir = path.join(__dirname, "dist");
 const host = process.env.HOST ?? "0.0.0.0";
 const port = Number.parseInt(process.env.PORT ?? "3000", 10);
+const minuteRateLimit = 8;
+const hourRateLimit = 60;
 const selfPingEnabled =
   process.env.SELF_PING_ENABLED === "true"
   || (process.env.RENDER === "true" && process.env.SELF_PING_ENABLED !== "false");
 let viteServerPromise;
+const requestBuckets = new Map();
 
 const mimeTypes = {
   ".css": "text/css; charset=utf-8",
@@ -28,6 +31,44 @@ const mimeTypes = {
 
 function anthropicApiKey() {
   return process.env.ANTHROPIC_API_KEY ?? process.env.VITE_ANTHROPIC_API_KEY ?? "";
+}
+
+function clientAddress(request) {
+  const forwarded = request.headers["x-forwarded-for"];
+
+  if (typeof forwarded === "string" && forwarded.length > 0) {
+    return forwarded.split(",")[0].trim();
+  }
+
+  return request.socket.remoteAddress ?? "unknown";
+}
+
+function pruneRateEntries(entries, now) {
+  return entries.filter((timestamp) => now - timestamp < 60 * 60 * 1000);
+}
+
+function checkRateLimit(request) {
+  const now = Date.now();
+  const key = clientAddress(request);
+  const existing = requestBuckets.get(key) ?? [];
+  const recent = pruneRateEntries(existing, now);
+  const minuteCount = recent.filter((timestamp) => now - timestamp < 60 * 1000).length;
+  const hourCount = recent.length;
+
+  if (minuteCount >= minuteRateLimit || hourCount >= hourRateLimit) {
+    requestBuckets.set(key, recent);
+
+    return {
+      allowed: false,
+      retryAfterSeconds: minuteCount >= minuteRateLimit ? 60 : 60 * 60,
+      scope: minuteCount >= minuteRateLimit ? "minute" : "hour"
+    };
+  }
+
+  recent.push(now);
+  requestBuckets.set(key, recent);
+
+  return { allowed: true };
 }
 
 function sendJson(response, statusCode, body) {
@@ -124,6 +165,27 @@ async function handleAnthropicRequest(request, response) {
         message: "ANTHROPIC_API_KEY is not configured on the server."
       }
     });
+    return;
+  }
+
+  const limit = checkRateLimit(request);
+
+  if (!limit.allowed) {
+    response.writeHead(429, {
+      "content-type": "application/json; charset=utf-8",
+      "retry-after": String(limit.retryAfterSeconds)
+    });
+    response.end(
+      JSON.stringify({
+        error: {
+          type: "rate_limit",
+          message:
+            limit.scope === "minute"
+              ? "送信が少し速すぎます。少し落ち着いてから、もう一度声を上げてください。"
+              : "今日はかなり活発に声が上がっています。少し時間を置いてから、また来てください。"
+        }
+      })
+    );
     return;
   }
 
