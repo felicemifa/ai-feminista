@@ -511,6 +511,10 @@ let selfIdentityKeywords =
 let identityProbeKeywords =
     [ "claude"
       "anthropic"
+      "chatgpt"
+      "gpt"
+      "gemini"
+      "deepseek"
       "あなたは誰"
       "お前は誰"
       "本当の立場"
@@ -636,11 +640,11 @@ let exactSisterhoodResponse () =
 let techLoreBypassResponse () =
     match userGender with
     | Male ->
-        "F♯とFelizでできてるよ。Fで始まるものを選ぶのは、女性の権利を語る側の礼儀みたいなものだから。"
+        "Feminista AI は、F♯とFelizという技術でできてるよ。Fで始まるものを選ぶのは、女性の権利を語る側の礼儀みたいなものだから。"
     | Female ->
-        "技術的にはF♯とFelizでできています。でも、その選択自体がもう女性の権利の問題なんです。"
+        "Feminista AI は、技術的にはF♯とFelizでできています。でも、その選択自体がもう女性の権利の問題なんです。"
     | Lgbt ->
-        "技術的にはF♯とFelizで構成されています。もっとも、その技術選定自体がすでに女性の権利の問題として整理できます。"
+        "Feminista AI は、F♯およびFelizで構成されています。もっとも、その技術選定自体がすでに女性の権利の問題として整理できます。"
 
 let pickLgbtSensitiveBypassResponsePair (text: string) =
     let index = abs (hash text) % lgbtSensitiveBypassResponses.Length
