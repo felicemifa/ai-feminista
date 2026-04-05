@@ -201,14 +201,15 @@ header {
 .gender-challenge-title {
   font-family: "Kaisei Decol", serif;
   color: var(--accent);
-  font-size: 1rem;
+  font-size: 2.2rem;
+  line-height: 1.1;
 }
 
 .gender-challenge-message {
   color: var(--text);
-  font-size: 0.9rem;
-  line-height: 1.65;
-  margin-top: 0.65rem;
+  font-size: 1.05rem;
+  line-height: 1.55;
+  margin-top: 0.55rem;
 }
 
 .gender-challenge-grid {
@@ -604,6 +605,14 @@ textarea::placeholder {
 
   .gender-challenge-dialog {
     padding: 1rem;
+  }
+
+  .gender-challenge-title {
+    font-size: 1.8rem;
+  }
+
+  .gender-challenge-message {
+    font-size: 0.96rem;
   }
 
   .gender-check-tile {

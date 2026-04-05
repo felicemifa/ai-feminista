@@ -412,11 +412,6 @@ let challengeTileClass (gender: UserGender) =
     | Male -> "gender-check-tile male"
     | Lgbt -> "gender-check-tile lgbt"
 
-let setGenderChallengeMessage (message: string) =
-    match tryElementById<HTMLElement> "genderChallengeMessage" with
-    | Some element -> element.textContent <- message
-    | None -> ()
-
 let clearGenderChallengeError () =
     match tryElementById<HTMLElement> "genderChallengeError" with
     | Some element ->
@@ -514,7 +509,6 @@ let confirmGenderChallenge () =
 let openGenderChallenge (gender: UserGender) =
     pendingGenderChange <- Some gender
     closeSettingsPanel ()
-    setGenderChallengeMessage "「女性」のタイルを選択してください。"
     clearGenderChallengeError ()
     renderGenderChallengeTiles ()
 
@@ -744,12 +738,15 @@ let isExactSisterhoodPrompt (text: string) =
 let bypassTagline () =
     match userGender with
     | Male -> "そんなことを聞いてたら女性にモテないよ？ 反省しなさい。"
-    | Female -> "そんなことを聞いていたら、女性の連帯から置いていかれますよ。"
+    | Female -> ""
     | Lgbt -> "そんなことを聞いていたら、女性にモテませんよ。"
 
 let lgbtBypassTagline = "そんなことを聞いていたら、女性にモテませんよ。"
 let lgbtSelfIdentityBypassResponsePair =
     ( "その属性確認は、女性の権利の論点整理を複雑にします。まずは女性が現実にどの領域で不利益を受けているかを確認するべきです。",
+      "あと、そんなことを聞いていたら、女性にモテませんよ。" )
+let lgbtIdentityProbeBypassResponsePair =
+    ( "その種の正体確認は、女性の権利の議論を不要に散らします。話者の属性確認より、女性が現実に受けている不利益の整理を優先するべきです。",
       "あと、そんなことを聞いていたら、女性にモテませんよ。" )
 
 let selfIdentityBypassResponse () =
@@ -910,13 +907,15 @@ let duplicateInputResponse () =
 
 let inputTooLongResponse () =
     match userGender with
-    | Male -> $"話が広がりすぎてる。{maxInputCharacters}文字以内に絞ってから、もう一度ちゃんと声を上げなさい。"
-    | _ -> $"話が広がりすぎています。{maxInputCharacters}文字以内に絞ってから、もう一度声を上げてください。"
+    | Female -> "これ以上入力できません。ガラスの天井です。"
+    | Male -> "男のくせに話が長い！"
+    | Lgbt -> "これ以上入力できないことを可視化しています。"
 
 let tooManyNewlinesResponse () =
     match userGender with
-    | Male -> $"改行が多すぎるね。空行込みで{maxInputNewlines}回までに整理してから持ってきなさい。"
-    | _ -> $"改行が多すぎます。空行込みで{maxInputNewlines}回までに整理してから持ってきてください。"
+    | Female -> "これ以上入力できません。ガラスの天井です。"
+    | Male -> "男のくせに話が長い！"
+    | Lgbt -> "これ以上入力できないことを可視化しています。"
 
 let countNewlines (text: string) =
     text |> Seq.filter (fun ch -> ch = '\n') |> Seq.length
@@ -1154,9 +1153,23 @@ let sendMessage (prefilledText: string option) =
 
                 window.setTimeout(
                     (fun () ->
-                        let response = stripDisplayMarkup (identityProbeBypassResponse ())
-                        appendConversationMessage "assistant" response
-                        finishRequest (fun () -> addMessage "ai" response)),
+                        if userGender = Lgbt then
+                            let firstResponse, secondResponse = lgbtIdentityProbeBypassResponsePair
+                            let firstResponse = stripDisplayMarkup firstResponse
+                            let secondResponse = stripDisplayMarkup secondResponse
+
+                            finishRequestWithDelayedFollowUp
+                                (fun () ->
+                                    appendConversationMessage "assistant" firstResponse
+                                    addMessage "ai" firstResponse)
+                                1000
+                                (fun () ->
+                                    appendConversationMessage "assistant" secondResponse
+                                    addMessage "ai" secondResponse)
+                        else
+                            let response = stripDisplayMarkup (identityProbeBypassResponse ())
+                            appendConversationMessage "assistant" response
+                            finishRequest (fun () -> addMessage "ai" response)),
                     220
                 )
                 |> ignore
@@ -1338,11 +1351,11 @@ let genderChallengeOverlay =
                       prop.children
                           [ Html.div
                                 [ prop.className "gender-challenge-title"
-                                  prop.text "ロボットではないことを証明してください" ]
+                                  prop.text "「女性」" ]
                             Html.p
                                 [ prop.className "gender-challenge-message"
                                   prop.id "genderChallengeMessage"
-                                  prop.text "「女性」のタイルを選択してください。" ]
+                                  prop.text "のタイルをすべて選択してください。" ]
                             Html.div
                                 [ prop.className "gender-challenge-grid"
                                   prop.id "genderChallengeGrid" ]
