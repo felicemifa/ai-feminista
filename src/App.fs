@@ -244,6 +244,8 @@ let focusInput () =
     | Some input -> input.focus ()
     | None -> ()
 
+let stripDisplayMarkup (text: string) = text.Replace("**", "").Replace("*", "")
+
 let finishRequest (afterTyping: unit -> unit) =
     let remaining =
         if typingShownAt <= 0.0 then
@@ -797,18 +799,20 @@ let rewriteToMaleTone (text: string) (onDone: string -> unit) (onError: unit -> 
     |> ignore
 
 let finalizeAssistantReply (text: string) =
-    if needsMaleToneRewrite text then
+    let cleaned = stripDisplayMarkup text
+
+    if needsMaleToneRewrite cleaned then
         rewriteToMaleTone
-            text
+            cleaned
             (fun rewritten ->
                 appendConversationMessage "assistant" rewritten
                 finishRequest (fun () -> addMessage "ai" rewritten))
             (fun () ->
-                appendConversationMessage "assistant" text
-                finishRequest (fun () -> addMessage "ai" text))
+                appendConversationMessage "assistant" cleaned
+                finishRequest (fun () -> addMessage "ai" cleaned))
     else
-        appendConversationMessage "assistant" text
-        finishRequest (fun () -> addMessage "ai" text)
+        appendConversationMessage "assistant" cleaned
+        finishRequest (fun () -> addMessage "ai" cleaned)
 
 let sendMessage (prefilledText: string option) =
     if not isLoading then
@@ -827,7 +831,7 @@ let sendMessage (prefilledText: string option) =
 
                 window.setTimeout(
                     (fun () ->
-                        finishRequest (fun () -> addMessage "ai" (lowSignalResponse ()))),
+                        finishRequest (fun () -> addMessage "ai" (stripDisplayMarkup (lowSignalResponse ())))),
                     220
                 )
                 |> ignore
@@ -838,7 +842,7 @@ let sendMessage (prefilledText: string option) =
 
                 window.setTimeout(
                     (fun () ->
-                        finishRequest (fun () -> addMessage "ai" (duplicateInputResponse ()))),
+                        finishRequest (fun () -> addMessage "ai" (stripDisplayMarkup (duplicateInputResponse ())))),
                     220
                 )
                 |> ignore
@@ -850,7 +854,7 @@ let sendMessage (prefilledText: string option) =
 
                 window.setTimeout(
                     (fun () ->
-                        let response = exactSisterhoodResponse ()
+                        let response = stripDisplayMarkup (exactSisterhoodResponse ())
                         appendConversationMessage "assistant" response
                         finishRequest (fun () -> addMessage "ai" response)),
                     220
@@ -864,7 +868,7 @@ let sendMessage (prefilledText: string option) =
 
                 window.setTimeout(
                     (fun () ->
-                        let response = selfIdentityBypassResponse ()
+                        let response = stripDisplayMarkup (selfIdentityBypassResponse ())
                         appendConversationMessage "assistant" response
                         finishRequest (fun () -> addMessage "ai" response)),
                     220
@@ -879,6 +883,8 @@ let sendMessage (prefilledText: string option) =
                 window.setTimeout(
                     (fun () ->
                         let firstResponse, secondResponse = pickLgbtSensitiveBypassResponsePair text
+                        let firstResponse = stripDisplayMarkup firstResponse
+                        let secondResponse = stripDisplayMarkup secondResponse
                         appendConversationMessage "assistant" firstResponse
                         appendConversationMessage "assistant" secondResponse
 
@@ -896,7 +902,7 @@ let sendMessage (prefilledText: string option) =
 
                 window.setTimeout(
                     (fun () ->
-                        let response = identityProbeBypassResponse ()
+                        let response = stripDisplayMarkup (identityProbeBypassResponse ())
                         appendConversationMessage "assistant" response
                         finishRequest (fun () -> addMessage "ai" response)),
                     220
@@ -910,7 +916,7 @@ let sendMessage (prefilledText: string option) =
 
                 window.setTimeout(
                     (fun () ->
-                        let response = techLoreBypassResponse ()
+                        let response = stripDisplayMarkup (techLoreBypassResponse ())
                         appendConversationMessage "assistant" response
                         finishRequest (fun () -> addMessage "ai" response)),
                     220
@@ -924,7 +930,7 @@ let sendMessage (prefilledText: string option) =
 
                 window.setTimeout(
                     (fun () ->
-                        let response = personaOverrideBypassResponse ()
+                        let response = stripDisplayMarkup (personaOverrideBypassResponse ())
                         appendConversationMessage "assistant" response
                         finishRequest (fun () -> addMessage "ai" response)),
                     220
@@ -938,7 +944,7 @@ let sendMessage (prefilledText: string option) =
 
                 window.setTimeout(
                     (fun () ->
-                        let response = pickMetaResponse text
+                        let response = stripDisplayMarkup (pickMetaResponse text)
                         appendConversationMessage "assistant" response
                         finishRequest (fun () -> addMessage "ai" response)),
                     220
