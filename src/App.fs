@@ -18,6 +18,9 @@ let stringify (value: obj) : string = jsNative
 [<Emit("Date.now()")>]
 let nowMs () : float = jsNative
 
+[<Emit("Math.random()")>]
+let randomFloat () : float = jsNative
+
 type AnthropicTextBlock =
     { ``type``: string
       text: string }
@@ -39,6 +42,9 @@ let mutable userGender = Female
 let mutable conversationHistory : ConversationMessage list = []
 let mutable sendMessageProxy : (string option -> unit) = fun _ -> ()
 let mutable typingShownAt = 0.0
+let mutable hasCustomizedGender = false
+let mutable pendingGenderChange : UserGender option = None
+let mutable completeUserGenderChange : (UserGender -> unit) = fun _ -> ()
 
 let minimumTypingMs = 1000.0
 let maxInputCharacters = 220
@@ -374,6 +380,9 @@ let saveUserGender () =
 
     window.localStorage.setItem ("feminista-user-gender", value)
 
+let saveGenderCustomizationState () =
+    window.localStorage.setItem ("feminista-user-gender-customized", if hasCustomizedGender then "true" else "false")
+
 let inputPlaceholder () =
     match userGender with
     | Male -> "マンスプレイニングを入力…"
@@ -384,6 +393,145 @@ let updateInputPlaceholder () =
     match tryElementById<HTMLTextAreaElement> "userInput" with
     | Some input -> input.placeholder <- inputPlaceholder ()
     | None -> ()
+
+let challengeKindKey (gender: UserGender) =
+    match gender with
+    | Female -> "female"
+    | Male -> "male"
+    | Lgbt -> "lgbt"
+
+let challengePictogram (gender: UserGender) =
+    match gender with
+    | Female -> "🚺"
+    | Male -> "🚹"
+    | Lgbt -> "⚧"
+
+let challengeTileClass (gender: UserGender) =
+    match gender with
+    | Female -> "gender-check-tile female"
+    | Male -> "gender-check-tile male"
+    | Lgbt -> "gender-check-tile lgbt"
+
+let setGenderChallengeMessage (message: string) =
+    match tryElementById<HTMLElement> "genderChallengeMessage" with
+    | Some element -> element.textContent <- message
+    | None -> ()
+
+let clearGenderChallengeError () =
+    match tryElementById<HTMLElement> "genderChallengeError" with
+    | Some element ->
+        element.textContent <- ""
+        element.classList.remove "visible"
+    | None -> ()
+
+let showGenderChallengeError (message: string) =
+    match tryElementById<HTMLElement> "genderChallengeError" with
+    | Some element ->
+        element.textContent <- message
+        element.classList.add "visible"
+    | None -> ()
+
+let closeGenderChallenge () =
+    pendingGenderChange <- None
+    clearGenderChallengeError ()
+
+    match tryElementById<HTMLElement> "genderChallengeOverlay" with
+    | Some overlay -> overlay.classList.remove "open"
+    | None -> ()
+
+let randomChallengeGender () =
+    let value = int (randomFloat () * 3.0)
+
+    match value with
+    | 0 -> Female
+    | 1 -> Male
+    | _ -> Lgbt
+
+let generateGenderChallengeTiles () =
+    let rec loop () =
+        let tiles = [ for _ in 1..6 -> randomChallengeGender () ]
+        let hasFemale = tiles |> List.contains Female
+        let hasMale = tiles |> List.contains Male
+        let hasLgbt = tiles |> List.contains Lgbt
+
+        if hasFemale && hasMale && hasLgbt then
+            tiles
+        else
+            loop ()
+
+    loop ()
+
+let renderGenderChallengeTiles () =
+    match tryElementById<HTMLDivElement> "genderChallengeGrid" with
+    | Some grid ->
+        grid.innerHTML <- ""
+
+        for gender in generateGenderChallengeTiles () do
+            let button = (document.createElement "button") :?> HTMLButtonElement
+            button.className <- challengeTileClass gender
+            button.setAttribute ("type", "button")
+            button.setAttribute ("data-kind", challengeKindKey gender)
+            button.setAttribute ("aria-label", challengeKindKey gender)
+            button.textContent <- challengePictogram gender
+
+            button.addEventListener (
+                "click",
+                (fun _ ->
+                    if button.classList.contains "selected" then
+                        button.classList.remove "selected"
+                    else
+                        button.classList.add "selected")
+            )
+
+            grid.appendChild button |> ignore
+    | None -> ()
+
+let confirmGenderChallenge () =
+    match pendingGenderChange with
+    | None -> closeGenderChallenge ()
+    | Some gender ->
+        match tryElementById<HTMLDivElement> "genderChallengeGrid" with
+        | None -> closeGenderChallenge ()
+        | Some grid ->
+            let buttons = grid.querySelectorAll ".gender-check-tile"
+
+            let isCorrect =
+                [ for i in 0 .. buttons.length - 1 do
+                      let button = buttons.item i :?> HTMLButtonElement
+                      let kind = button.getAttribute "data-kind"
+                      let shouldBeSelected = kind = "female" || kind = "lgbt"
+                      let isSelected = button.classList.contains "selected"
+                      yield shouldBeSelected = isSelected ]
+                |> List.forall id
+
+            if isCorrect then
+                closeGenderChallenge ()
+                completeUserGenderChange gender
+            else
+                showGenderChallengeError "違います。やり直しです。"
+                renderGenderChallengeTiles ()
+
+let openGenderChallenge (gender: UserGender) =
+    pendingGenderChange <- Some gender
+    closeSettingsPanel ()
+    setGenderChallengeMessage "「女性」のタイルを選択してください。"
+    clearGenderChallengeError ()
+    renderGenderChallengeTiles ()
+
+    match tryElementById<HTMLElement> "genderChallengeOverlay" with
+    | Some overlay -> overlay.classList.add "open"
+    | None -> ()
+
+let requestUserGenderChange (gender: UserGender) =
+    if userGender = gender then
+        closeSettingsPanel ()
+        focusInput ()
+    elif hasCustomizedGender then
+        openGenderChallenge gender
+    else
+        hasCustomizedGender <- true
+        saveGenderCustomizationState ()
+        completeUserGenderChange gender
 
 let applyUserGender (gender: UserGender) =
     if userGender = gender then
@@ -411,11 +559,18 @@ let applyUserGender (gender: UserGender) =
         closeSettingsPanel ()
         focusInput ()
 
+completeUserGenderChange <- applyUserGender
+
 let restoreUserGender () =
     match window.localStorage.getItem "feminista-user-gender" with
     | "male" -> userGender <- Male
     | "lgbt" -> userGender <- Lgbt
     | _ -> userGender <- Female
+
+    hasCustomizedGender <-
+        match window.localStorage.getItem "feminista-user-gender-customized" with
+        | "true" -> true
+        | _ -> userGender <> Female
 
 let clearInput () =
     match tryElementById<HTMLTextAreaElement> "userInput" with
@@ -1158,20 +1313,53 @@ let settingsPanel =
                     [ prop.id "settingsOptionFemale"
                       prop.className (settingsOptionClass Female)
                       prop.text "👩 女性"
-                      prop.onClick (fun _ -> applyUserGender Female) ]
+                      prop.onClick (fun _ -> requestUserGenderChange Female) ]
                 )
                 Html.button (
                     [ prop.id "settingsOptionMale"
                       prop.className (settingsOptionClass Male)
                       prop.text "👨 男"
-                      prop.onClick (fun _ -> applyUserGender Male) ]
+                      prop.onClick (fun _ -> requestUserGenderChange Male) ]
                 )
                 Html.button (
                     [ prop.id "settingsOptionLgbt"
                       prop.className (settingsOptionClass Lgbt)
                       prop.text "🧔‍♀️ LGBT"
-                      prop.onClick (fun _ -> applyUserGender Lgbt) ]
+                      prop.onClick (fun _ -> requestUserGenderChange Lgbt) ]
                 ) ] ]
+
+let genderChallengeOverlay =
+    Html.div
+        [ prop.className "gender-challenge-overlay"
+          prop.id "genderChallengeOverlay"
+          prop.children
+              [ Html.div
+                    [ prop.className "gender-challenge-dialog"
+                      prop.children
+                          [ Html.div
+                                [ prop.className "gender-challenge-title"
+                                  prop.text "ロボットではないことを証明してください" ]
+                            Html.p
+                                [ prop.className "gender-challenge-message"
+                                  prop.id "genderChallengeMessage"
+                                  prop.text "「女性」のタイルを選択してください。" ]
+                            Html.div
+                                [ prop.className "gender-challenge-grid"
+                                  prop.id "genderChallengeGrid" ]
+                            Html.div
+                                [ prop.className "gender-challenge-error"
+                                  prop.id "genderChallengeError" ]
+                            Html.div
+                                [ prop.className "gender-challenge-actions"
+                                  prop.children
+                                      [ Html.button
+                                            [ prop.className "gender-challenge-button secondary"
+                                              prop.text "やめる"
+                                              prop.onClick (fun _ -> closeGenderChallenge ()) ]
+                                        Html.button
+                                            [ prop.className "gender-challenge-button"
+                                              prop.text "確認"
+                                              prop.onClick (fun _ -> confirmGenderChallenge ()) ] ] ] ] ] ] ]
 
 let shell =
     Html.div
@@ -1227,7 +1415,8 @@ let shell =
                                               prop.onClick (fun _ -> sendMessage None) ] ] ]
                             Html.div
                                 [ prop.className "footer-note"
-                                  prop.text "AI Feminista, built with F♯ and Feliz" ] ] ] ] ]
+                                  prop.text "AI Feminista, built with F♯ and Feliz" ] ] ]
+                genderChallengeOverlay ] ]
 
 let mount () =
     restoreUserGender ()
