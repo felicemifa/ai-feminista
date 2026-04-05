@@ -165,10 +165,16 @@ let addMessage (role: string) (text: string) =
 let appendConversationMessage (role: string) (text: string) =
     conversationHistory <- conversationHistory @ [ { Role = role; Text = text } ]
 
+let rememberedConversationMessageLimit () =
+    match userGender with
+    | Female -> 10
+    | Male -> 8
+    | Lgbt -> 6
+
 let recentConversationMessages () =
     conversationHistory
     |> List.rev
-    |> List.truncate 6
+    |> List.truncate (rememberedConversationMessageLimit ())
     |> List.rev
 
 let anthropicMessagesForRequest (latestUserText: string) =
