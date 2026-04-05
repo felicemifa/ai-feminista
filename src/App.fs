@@ -349,12 +349,6 @@ let settingsOptionClass (gender: UserGender) =
     else
         "settings-option"
 
-let settingsOptionDisabledProps (gender: UserGender) =
-    if userGender = gender then
-        [ prop.disabled true ]
-    else
-        []
-
 let updateSettingsSelection () =
     let updateOption (id: string) (isSelected: bool) =
         match tryElementById<HTMLButtonElement> id with
@@ -1165,21 +1159,18 @@ let settingsPanel =
                       prop.className (settingsOptionClass Female)
                       prop.text "👩 女性"
                       prop.onClick (fun _ -> applyUserGender Female) ]
-                    @ settingsOptionDisabledProps Female
                 )
                 Html.button (
                     [ prop.id "settingsOptionMale"
                       prop.className (settingsOptionClass Male)
                       prop.text "👨 男"
                       prop.onClick (fun _ -> applyUserGender Male) ]
-                    @ settingsOptionDisabledProps Male
                 )
                 Html.button (
                     [ prop.id "settingsOptionLgbt"
                       prop.className (settingsOptionClass Lgbt)
                       prop.text "🧔‍♀️ LGBT"
                       prop.onClick (fun _ -> applyUserGender Lgbt) ]
-                    @ settingsOptionDisabledProps Lgbt
                 ) ] ]
 
 let shell =
