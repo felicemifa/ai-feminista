@@ -48,7 +48,6 @@ let mutable sendMessageProxy : (string option -> unit) = fun _ -> ()
 let mutable typingShownAt = 0.0
 let mutable hasCustomizedGender = false
 let mutable pendingGenderChange : UserGender option = None
-let mutable completeUserGenderChange : (UserGender -> unit) = fun _ -> ()
 let mutable currentGenderChallengeMode = InclusiveFemale
 let mutable settingsAutoCloseHandle : float option = None
 
@@ -537,6 +536,32 @@ let renderGenderChallengeTiles () =
             grid.appendChild button |> ignore
     | None -> ()
 
+let applyUserGender (gender: UserGender) =
+    if userGender = gender then
+        closeSettingsPanel ()
+        focusInput ()
+    else
+        userGender <- gender
+        saveUserGender ()
+        isLoading <- false
+        conversationHistory <- []
+        removeTyping ()
+        match tryElementById<HTMLTextAreaElement> "userInput" with
+        | Some input ->
+            input.value <- ""
+            resizeTextArea input
+        | None -> ()
+        setSendButtonDisabled false
+        match tryElementById<HTMLDivElement> "errorArea" with
+        | Some area -> area.innerHTML <- ""
+        | None -> ()
+        resetChatView ()
+        refreshUserAvatars ()
+        updateInputPlaceholder ()
+        updateSettingsSelection ()
+        closeSettingsPanel ()
+        focusInput ()
+
 let confirmGenderChallenge () =
     match pendingGenderChange with
     | None -> closeGenderChallenge ()
@@ -560,7 +585,7 @@ let confirmGenderChallenge () =
 
             if isCorrect then
                 closeGenderChallenge ()
-                completeUserGenderChange gender
+                applyUserGender gender
             else
                 showGenderChallengeError "違います。やり直しです。"
                 renderGenderChallengeTiles ()
@@ -588,35 +613,7 @@ let requestUserGenderChange (gender: UserGender) =
             hasCustomizedGender <- true
             saveGenderCustomizationState ()
 
-        completeUserGenderChange gender
-
-let applyUserGender (gender: UserGender) =
-    if userGender = gender then
-        closeSettingsPanel ()
-        focusInput ()
-    else
-        userGender <- gender
-        saveUserGender ()
-        isLoading <- false
-        conversationHistory <- []
-        removeTyping ()
-        match tryElementById<HTMLTextAreaElement> "userInput" with
-        | Some input ->
-            input.value <- ""
-            resizeTextArea input
-        | None -> ()
-        setSendButtonDisabled false
-        match tryElementById<HTMLDivElement> "errorArea" with
-        | Some area -> area.innerHTML <- ""
-        | None -> ()
-        resetChatView ()
-        refreshUserAvatars ()
-        updateInputPlaceholder ()
-        updateSettingsSelection ()
-        closeSettingsPanel ()
-        focusInput ()
-
-completeUserGenderChange <- applyUserGender
+        applyUserGender gender
 
 let restoreUserGender () =
     match window.localStorage.getItem "feminista-user-gender" with
