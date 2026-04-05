@@ -37,6 +37,10 @@ type UserGender =
     | Male
     | Lgbt
 
+type GenderChallengeMode =
+    | InclusiveFemale
+    | StrictFemale
+
 let mutable isLoading = false
 let mutable userGender = Female
 let mutable conversationHistory : ConversationMessage list = []
@@ -45,6 +49,8 @@ let mutable typingShownAt = 0.0
 let mutable hasCustomizedGender = false
 let mutable pendingGenderChange : UserGender option = None
 let mutable completeUserGenderChange : (UserGender -> unit) = fun _ -> ()
+let mutable currentGenderChallengeMode = InclusiveFemale
+let mutable settingsAutoCloseHandle : float option = None
 
 let minimumTypingMs = 1000.0
 let maxInputCharacters = 220
@@ -179,8 +185,13 @@ let anthropicMessagesForRequest (latestUserText: string) =
 
 let typingLabel () =
     match userGender with
-    | Female -> "女性活躍中…"
-    | Male -> "社会進出中…"
+    | Female ->
+        [| "女性活躍中…"
+           "ロールモデル育成中…"
+           "エンパワーメント中…" |][int (randomFloat () * 3.0)]
+    | Male ->
+        [| "社会進出中…"
+           "バックラッシュ警戒中…" |][int (randomFloat () * 2.0)]
     | Lgbt -> "理解増進中…"
 
 let showTyping () =
@@ -340,13 +351,31 @@ let resetChatView () =
     chatArea.appendChild root |> ignore
 
 let closeSettingsPanel () =
+    match settingsAutoCloseHandle with
+    | Some handle ->
+        window.clearTimeout handle
+        settingsAutoCloseHandle <- None
+    | None -> ()
+
     match tryElementById<HTMLElement> "settingsPanel" with
     | Some panel -> panel.classList.remove "open"
     | None -> ()
 
 let openSettingsPanel () =
     match tryElementById<HTMLElement> "settingsPanel" with
-    | Some panel -> panel.classList.add "open"
+    | Some panel ->
+        panel.classList.add "open"
+        closeSettingsPanel ()
+        panel.classList.add "open"
+
+        settingsAutoCloseHandle <-
+            Some
+                (window.setTimeout(
+                    (fun () ->
+                        settingsAutoCloseHandle <- None
+                        closeSettingsPanel ()),
+                    4000
+                ))
     | None -> ()
 
 let settingsOptionClass (gender: UserGender) =
@@ -411,6 +440,27 @@ let challengeTileClass (gender: UserGender) =
     | Female -> "gender-check-tile female"
     | Male -> "gender-check-tile male"
     | Lgbt -> "gender-check-tile lgbt"
+
+let randomGenderChallengeMode () =
+    if randomFloat () < 0.5 then
+        InclusiveFemale
+    else
+        StrictFemale
+
+let genderChallengeTitle () =
+    match currentGenderChallengeMode with
+    | InclusiveFemale -> "「女性」"
+    | StrictFemale -> "女性"
+
+let genderChallengeMessage () =
+    "のタイルをすべて選択してください。"
+
+let setGenderChallengeCopy () =
+    match tryElementById<HTMLElement> "genderChallengeTitle", tryElementById<HTMLElement> "genderChallengeMessage" with
+    | Some title, Some message ->
+        title.textContent <- genderChallengeTitle ()
+        message.textContent <- genderChallengeMessage ()
+    | _ -> ()
 
 let clearGenderChallengeError () =
     match tryElementById<HTMLElement> "genderChallengeError" with
@@ -494,7 +544,10 @@ let confirmGenderChallenge () =
                 [ for i in 0 .. buttons.length - 1 do
                       let button = buttons.item i :?> HTMLButtonElement
                       let kind = button.getAttribute "data-kind"
-                      let shouldBeSelected = kind = "female" || kind = "lgbt"
+                      let shouldBeSelected =
+                          match currentGenderChallengeMode with
+                          | InclusiveFemale -> kind = "female" || kind = "lgbt"
+                          | StrictFemale -> kind = "female"
                       let isSelected = button.classList.contains "selected"
                       yield shouldBeSelected = isSelected ]
                 |> List.forall id
@@ -508,7 +561,9 @@ let confirmGenderChallenge () =
 
 let openGenderChallenge (gender: UserGender) =
     pendingGenderChange <- Some gender
+    currentGenderChallengeMode <- randomGenderChallengeMode ()
     closeSettingsPanel ()
+    setGenderChallengeCopy ()
     clearGenderChallengeError ()
     renderGenderChallengeTiles ()
 
@@ -520,11 +575,13 @@ let requestUserGenderChange (gender: UserGender) =
     if userGender = gender then
         closeSettingsPanel ()
         focusInput ()
-    elif hasCustomizedGender then
+    elif gender = Female && userGender <> Female then
         openGenderChallenge gender
     else
-        hasCustomizedGender <- true
-        saveGenderCustomizationState ()
+        if not hasCustomizedGender then
+            hasCustomizedGender <- true
+            saveGenderCustomizationState ()
+
         completeUserGenderChange gender
 
 let applyUserGender (gender: UserGender) =
@@ -1351,6 +1408,7 @@ let genderChallengeOverlay =
                       prop.children
                           [ Html.div
                                 [ prop.className "gender-challenge-title"
+                                  prop.id "genderChallengeTitle"
                                   prop.text "「女性」" ]
                             Html.p
                                 [ prop.className "gender-challenge-message"
