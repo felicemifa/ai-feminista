@@ -253,20 +253,18 @@ header {
 }
 
 .gender-check-tile.lgbt {
-  background-image: linear-gradient(
-    90deg,
-    #ff3b6b 0%,
-    #ff8a00 20%,
-    #ffd400 40%,
-    #39d353 60%,
-    #33c3ff 80%,
-    #b05cff 100%
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
   color: transparent;
-  -webkit-text-fill-color: transparent;
-  text-shadow: 0 0 10px rgba(255, 138, 0, 0.18);
+}
+
+.gender-check-lgbt-figure {
+  display: block;
+  width: 48px;
+  height: 68px;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  filter: drop-shadow(0 0 12px rgba(255, 138, 0, 0.22));
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 72 108'%3E%3Cdefs%3E%3CclipPath id='shape'%3E%3Ccircle cx='36' cy='13' r='11'/%3E%3Cpath d='M28 28h16c3 0 5 1 6 4l4 12c1 3 0 4-3 4h-1v18l-3 28c0 3-2 5-5 5s-5-2-5-5V72h-2v22c0 3-2 5-5 5s-5-2-5-5l-3-28V48h-1c-3 0-4-1-3-4l4-12c1-3 3-4 6-4z'/%3E%3Crect x='16' y='31' width='7' height='31' rx='3.5'/%3E%3Crect x='49' y='31' width='7' height='31' rx='3.5'/%3E%3C/clipPath%3E%3ClinearGradient id='rainbow' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0%25' stop-color='%23ff2344'/%3E%3Cstop offset='16.6%25' stop-color='%23ff2344'/%3E%3Cstop offset='16.7%25' stop-color='%23ff8a00'/%3E%3Cstop offset='33.2%25' stop-color='%23ff8a00'/%3E%3Cstop offset='33.3%25' stop-color='%23ffe14a'/%3E%3Cstop offset='49.8%25' stop-color='%23ffe14a'/%3E%3Cstop offset='49.9%25' stop-color='%2363d34f'/%3E%3Cstop offset='66.4%25' stop-color='%2363d34f'/%3E%3Cstop offset='66.5%25' stop-color='%2336b8ff'/%3E%3Cstop offset='83%25' stop-color='%2336b8ff'/%3E%3Cstop offset='83.1%25' stop-color='%23884dff'/%3E%3Cstop offset='100%25' stop-color='%23884dff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cg clip-path='url(%23shape)'%3E%3Crect width='72' height='108' fill='url(%23rainbow)'/%3E%3C/g%3E%3Cpath d='M28 28h16c3 0 5 1 6 4l4 12c1 3 0 4-3 4h-1v18l-3 28c0 3-2 5-5 5s-5-2-5-5V72h-2v22c0 3-2 5-5 5s-5-2-5-5l-3-28V48h-1c-3 0-4-1-3-4l4-12c1-3 3-4 6-4z' fill='none' stroke='rgba(255,255,255,0.32)' stroke-width='1.5'/%3E%3Cpath d='M22 41l-3 16M50 41l3 16M32 49v43M40 49v43' stroke='rgba(255,255,255,0.72)' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E");
 }
 
 .gender-challenge-error {

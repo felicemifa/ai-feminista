@@ -517,7 +517,13 @@ let renderGenderChallengeTiles () =
             button.setAttribute ("type", "button")
             button.setAttribute ("data-kind", challengeKindKey gender)
             button.setAttribute ("aria-label", challengeKindKey gender)
-            button.textContent <- challengePictogram gender
+
+            if gender = Lgbt then
+                let icon = document.createElement "span"
+                icon.className <- "gender-check-lgbt-figure"
+                button.appendChild icon |> ignore
+            else
+                button.textContent <- challengePictogram gender
 
             button.addEventListener (
                 "click",
