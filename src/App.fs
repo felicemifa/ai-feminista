@@ -343,16 +343,6 @@ let openSettingsPanel () =
     | Some panel -> panel.classList.add "open"
     | None -> ()
 
-let updateSettingsLabel () =
-    match tryElementById<HTMLElement> "settingsValue" with
-    | Some label ->
-        label.textContent <-
-            match userGender with
-            | Female -> "女性"
-            | Male -> "男"
-            | Lgbt -> "LGBT"
-    | None -> ()
-
 let updateSettingsSelection () =
     let updateOption (id: string) (isSelected: bool) =
         match tryElementById<HTMLButtonElement> id with
@@ -411,7 +401,6 @@ let applyUserGender (gender: UserGender) =
         resetChatView ()
         refreshUserAvatars ()
         updateInputPlaceholder ()
-        updateSettingsLabel ()
         updateSettingsSelection ()
         closeSettingsPanel ()
         focusInput ()
@@ -1197,12 +1186,7 @@ let shell =
                                                   match tryElementById<HTMLElement> "settingsPanel" with
                                                   | Some panel when panel.classList.contains "open" -> closeSettingsPanel ()
                                                   | _ -> openSettingsPanel ())
-                                              prop.children
-                                                  [ Html.span "設定"
-                                                    Html.span
-                                                        [ prop.className "settings-value"
-                                                          prop.id "settingsValue"
-                                                          prop.text "" ] ] ]
+                                              prop.text "設定" ]
                                         settingsPanel ] ] ] ]
                 Html.div
                     [ prop.className "chat-area"
@@ -1240,7 +1224,6 @@ let mount () =
     let root = createRoot (document.getElementById "root")
     renderRoot root shell
     updateInputPlaceholder ()
-    updateSettingsLabel ()
     updateSettingsSelection ()
 
 mount ()
