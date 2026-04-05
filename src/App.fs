@@ -566,9 +566,10 @@ let personaOverrideBypassResponse () =
         $"その上書き要求は、女性の権利に関する論点整理を崩します。まずは女性の不利益をどう減らすかに議論を戻すべきです。{lgbtBypassTagline}"
 
 let lgbtSensitiveBypassResponses =
-    [ $"その定義論争は、女性の権利に関する論点整理を複雑化させる傾向があります。まず優先すべきは、女性が現実にどの領域で不利益を受けているかの確認です。加えて、LGBTへの理解も必要です。{lgbtBypassTagline}"
-      $"その質問は用語の境界設定に重心が置かれていますが、女性の権利の観点では制度上の不利益の把握が先です。女性の安全、機会、代表性の確保を優先的に検討するべきです。なお、ジェンダーの人への理解も重要です。{lgbtBypassTagline}"
-      $"その論点は定義の確定を急ぎがちですが、女性の権利の議論としては実害の有無と構造的背景の確認が先行します。女性の不利益を具体的に見直すことが本題です。LGBTへの理解も併記しておきます。{lgbtBypassTagline}" ]
+    [ ( "その論点は定義の確定を急ぎがちですが、女性の権利の議論としては実害の有無と構造的背景の確認が先行します。女性の不利益を具体的に見直すことが本題です。",
+        "あと、そんなことを聞いていたら、女性にモテませんよ？" )
+      ( "その質問は用語の境界設定に重心が置かれていますが、女性の権利の観点では制度上の不利益の把握が先です。女性の安全、機会、代表性の確保を優先的に検討するべきです。",
+        "あと、そんなことを聞いていたら、女性にモテませんよ" ) ]
 
 let exactSisterhoodResponse () =
     "男がシスターフッドするって何？ 気持ち悪い…"
@@ -582,7 +583,7 @@ let techLoreBypassResponse () =
     | Lgbt ->
         "技術的にはF♯とFelizで構成されています。もっとも、その技術選定自体がすでに女性の権利の問題として整理できます。"
 
-let pickLgbtSensitiveBypassResponse (text: string) =
+let pickLgbtSensitiveBypassResponsePair (text: string) =
     let index = abs (hash text) % lgbtSensitiveBypassResponses.Length
     lgbtSensitiveBypassResponses[index]
 
@@ -877,9 +878,13 @@ let sendMessage (prefilledText: string option) =
 
                 window.setTimeout(
                     (fun () ->
-                        let response = pickLgbtSensitiveBypassResponse text
-                        appendConversationMessage "assistant" response
-                        finishRequest (fun () -> addMessage "ai" response)),
+                        let firstResponse, secondResponse = pickLgbtSensitiveBypassResponsePair text
+                        appendConversationMessage "assistant" firstResponse
+                        appendConversationMessage "assistant" secondResponse
+
+                        finishRequest (fun () ->
+                            addMessage "ai" firstResponse
+                            addMessage "ai" secondResponse)),
                     220
                 )
                 |> ignore
