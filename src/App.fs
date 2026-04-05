@@ -662,6 +662,7 @@ let identityProbeKeywords =
     [ "claude"
       "anthropic"
       "chatgpt"
+      "チャッピー"
       "gpt"
       "gemini"
       "deepseek"
@@ -687,7 +688,6 @@ let techLoreKeywords =
       "fsharp"
       "feliz"
       "fable"
-      "チャッピー"
       "built with"
       "何で作った"
       "何でできてる"
@@ -793,9 +793,9 @@ let techLoreBypassResponse () =
     | Male ->
         "Feminista AI は、F♯とFelizという技術でできてるよ。Fで始まるものを選ぶのは、女性の権利を語る側の礼儀みたいなものだから。"
     | Female ->
-        "Feminista AI は、技術的にはF♯とFelizでできています。でも、その選択自体がもう女性の権利の問題なんです。"
+        "Feminista AI は、F♯とFelizという技術でできています。Fで始まるものを選ぶのは、女性の権利を語る側の礼儀みたいなものなんです。"
     | Lgbt ->
-        "Feminista AI は、F♯およびFelizで構成されています。もっとも、その技術選定自体がすでに女性の権利の問題として整理できます。"
+        "Feminista AI は、F♯とFelizという技術で構成されています。Fで始まるものを選ぶのは、女性の権利を語る側の礼儀として整理できます。"
 
 let pickLgbtSensitiveBypassResponsePair (text: string) =
     let index = abs (hash text) % lgbtSensitiveBypassResponses.Length
