@@ -343,6 +343,18 @@ let openSettingsPanel () =
     | Some panel -> panel.classList.add "open"
     | None -> ()
 
+let settingsOptionClass (gender: UserGender) =
+    if userGender = gender then
+        "settings-option current"
+    else
+        "settings-option"
+
+let settingsOptionDisabledProps (gender: UserGender) =
+    if userGender = gender then
+        [ prop.disabled true ]
+    else
+        []
+
 let updateSettingsSelection () =
     let updateOption (id: string) (isSelected: bool) =
         match tryElementById<HTMLButtonElement> id with
@@ -1148,21 +1160,27 @@ let settingsPanel =
               [ Html.div
                     [ prop.className "settings-title"
                       prop.text "あなたの性別" ]
-                Html.button
+                Html.button (
                     [ prop.id "settingsOptionFemale"
-                      prop.className "settings-option"
+                      prop.className (settingsOptionClass Female)
                       prop.text "👩 女性"
                       prop.onClick (fun _ -> applyUserGender Female) ]
-                Html.button
+                    @ settingsOptionDisabledProps Female
+                )
+                Html.button (
                     [ prop.id "settingsOptionMale"
-                      prop.className "settings-option"
+                      prop.className (settingsOptionClass Male)
                       prop.text "👨 男"
                       prop.onClick (fun _ -> applyUserGender Male) ]
-                Html.button
+                    @ settingsOptionDisabledProps Male
+                )
+                Html.button (
                     [ prop.id "settingsOptionLgbt"
-                      prop.className "settings-option"
+                      prop.className (settingsOptionClass Lgbt)
                       prop.text "🧔‍♀️ LGBT"
-                      prop.onClick (fun _ -> applyUserGender Lgbt) ] ] ]
+                      prop.onClick (fun _ -> applyUserGender Lgbt) ]
+                    @ settingsOptionDisabledProps Lgbt
+                ) ] ]
 
 let shell =
     Html.div
