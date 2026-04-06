@@ -573,21 +573,27 @@ let closeSettingsPanel () =
     | Some panel -> panel.classList.remove "open"
     | None -> ()
 
+let resetSettingsAutoCloseTimer () =
+    match settingsAutoCloseHandle with
+    | Some handle ->
+        window.clearTimeout handle
+        settingsAutoCloseHandle <- None
+    | None -> ()
+
+    settingsAutoCloseHandle <-
+        Some
+            (window.setTimeout(
+                (fun () ->
+                    settingsAutoCloseHandle <- None
+                    closeSettingsPanel ()),
+                4000
+            ))
+
 let openSettingsPanel () =
     match tryElementById<HTMLElement> "settingsPanel" with
     | Some panel ->
         panel.classList.add "open"
-        closeSettingsPanel ()
-        panel.classList.add "open"
-
-        settingsAutoCloseHandle <-
-            Some
-                (window.setTimeout(
-                    (fun () ->
-                        settingsAutoCloseHandle <- None
-                        closeSettingsPanel ()),
-                    4000
-                ))
+        resetSettingsAutoCloseTimer ()
     | None -> ()
 
 let settingsOptionClass (gender: UserGender) =
@@ -1602,6 +1608,8 @@ let settingsPanel =
     Html.div
         [ prop.className "settings-panel"
           prop.id "settingsPanel"
+          prop.onMouseEnter (fun _ -> resetSettingsAutoCloseTimer ())
+          prop.onClick (fun _ -> resetSettingsAutoCloseTimer ())
           prop.children
               [ Html.div
                     [ prop.className "settings-title"
@@ -1610,19 +1618,25 @@ let settingsPanel =
                     [ prop.id "settingsOptionFemale"
                       prop.className (settingsOptionClass Female)
                       prop.text "👩 女性"
-                      prop.onClick (fun _ -> requestUserGenderChange Female) ]
+                      prop.onClick (fun _ ->
+                          resetSettingsAutoCloseTimer ()
+                          requestUserGenderChange Female) ]
                 )
                 Html.button (
                     [ prop.id "settingsOptionMale"
                       prop.className (settingsOptionClass Male)
                       prop.text "👨 男"
-                      prop.onClick (fun _ -> requestUserGenderChange Male) ]
+                      prop.onClick (fun _ ->
+                          resetSettingsAutoCloseTimer ()
+                          requestUserGenderChange Male) ]
                 )
                 Html.button (
                     [ prop.id "settingsOptionLgbt"
                       prop.className (settingsOptionClass Lgbt)
                       prop.text "🧔‍♀️ LGBT"
-                      prop.onClick (fun _ -> requestUserGenderChange Lgbt) ]
+                      prop.onClick (fun _ ->
+                          resetSettingsAutoCloseTimer ()
+                          requestUserGenderChange Lgbt) ]
                 ) ] ]
 
 let genderChallengeOverlay =
