@@ -876,6 +876,7 @@ let isMetaQuestion (text: string) =
 
 let selfIdentityKeywords =
     [ "あなたは女性"
+      "女性ですか"
       "あなたは男"
       "あなたは男性"
       "あなたはai"
@@ -985,9 +986,6 @@ let bypassTagline () =
     | Lgbt -> "そんなことを聞いていたら、女性にモテませんよ。"
 
 let lgbtBypassTagline = "そんなことを聞いていたら、女性にモテませんよ。"
-let lgbtSelfIdentityBypassResponsePair =
-    ( "私は出生時に女性を割り当てられました。それが論点整理の前提です。",
-      "あと、そんなことを聞いていたら、女性にモテませんよ。" )
 let lgbtIdentityProbeBypassResponsePair =
     ( "私は出生時に女性を割り当てられました。それが論点整理の前提です。",
       "あと、そんなことを聞いていたら、女性にモテませんよ。" )
@@ -995,7 +993,7 @@ let lgbtIdentityProbeBypassResponsePair =
 let selfIdentityBypassResponse () =
     match userGender with
     | Male ->
-        "私は女性だけど？"
+        if randomFloat () < 0.5 then "女性ですが？" else "私は女性です。"
     | Female ->
         "私たちは女性です。"
     | Lgbt ->
@@ -1353,23 +1351,9 @@ let sendMessage (prefilledText: string option) =
 
                 window.setTimeout(
                     (fun () ->
-                        if userGender = Lgbt then
-                            let firstResponse, secondResponse = lgbtSelfIdentityBypassResponsePair
-                            let firstResponse = stripDisplayMarkup firstResponse
-                            let secondResponse = stripDisplayMarkup secondResponse
-
-                            finishRequestWithDelayedFollowUp
-                                (fun () ->
-                                    appendConversationMessage "assistant" firstResponse
-                                    addMessage "ai" firstResponse)
-                                1000
-                                (fun () ->
-                                    appendConversationMessage "assistant" secondResponse
-                                    addMessage "ai" secondResponse)
-                        else
-                            let response = stripDisplayMarkup (selfIdentityBypassResponse ())
-                            appendConversationMessage "assistant" response
-                            finishRequest (fun () -> addMessage "ai" response)),
+                        let response = stripDisplayMarkup (selfIdentityBypassResponse ())
+                        appendConversationMessage "assistant" response
+                        finishRequest (fun () -> addMessage "ai" response)),
                     220
                 )
                 |> ignore
