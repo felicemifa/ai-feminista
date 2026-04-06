@@ -301,7 +301,7 @@ let showError (message: string) =
             match tryElementById<HTMLDivElement> "errorArea" with
             | Some area -> area.innerHTML <- ""
             | None -> ()),
-        4000
+        7000
     )
     |> ignore
 
@@ -1698,7 +1698,6 @@ let shell =
                                       [ Html.textarea
                                             [ prop.id "userInput"
                                               prop.placeholder (inputPlaceholder ())
-                                              prop.maxLength maxInputCharacters
                                               prop.rows 1
                                               prop.onInput (fun ev ->
                                                   resizeTextArea (unbox ev.target))
