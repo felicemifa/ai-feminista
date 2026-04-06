@@ -32,6 +32,20 @@ type ConversationMessage =
     { Role: string
       Text: string }
 
+type LatestFact =
+    { id: string
+      title: string
+      keywords: string array
+      summary: string
+      asOf: string
+      source: string
+      sourceUrl: string
+      notes: string }
+
+type LatestFactsPayload =
+    { updatedAt: string
+      facts: LatestFact array }
+
 type UserGender =
     | Female
     | Male
@@ -44,6 +58,7 @@ type GenderChallengeMode =
 let mutable isLoading = false
 let mutable userGender = Female
 let mutable conversationHistory : ConversationMessage list = []
+let mutable latestFacts : LatestFact array = [||]
 let mutable sendMessageProxy : (string option -> unit) = fun _ -> ()
 let mutable typingShownAt = 0.0
 let mutable typingLabelIntervalHandle : float option = None
@@ -126,6 +141,14 @@ let hasApiKeyConfigured () =
     | null -> false
     | value when jsTypeof value = "undefined" -> false
     | value -> !!value
+
+let restoreLatestFacts () =
+    match window?__LATEST_FACTS__ with
+    | null -> latestFacts <- [||]
+    | value when jsTypeof value = "undefined" -> latestFacts <- [||]
+    | value ->
+        let payload: LatestFactsPayload = unbox value
+        latestFacts <- payload.facts
 
 let resizeTextArea (element: HTMLTextAreaElement) =
     if not (isNull element) then
@@ -797,6 +820,28 @@ let normalizeForBypass (text: string) =
 
     System.String stripped
 
+let latestFactsForPrompt (text: string) =
+    let normalized = normalizeForBypass text
+
+    latestFacts
+    |> Array.filter (fun fact ->
+        fact.keywords
+        |> Array.exists (fun keyword -> normalizeForBypass keyword |> normalized.Contains))
+    |> Array.truncate 3
+
+let latestFactsPromptSuffix (text: string) =
+    let matchedFacts = latestFactsForPrompt text
+
+    if matchedFacts.Length = 0 then
+        ""
+    else
+        let bulletLines =
+            matchedFacts
+            |> Array.map (fun fact -> $"- {fact.summary}")
+            |> String.concat "\n"
+
+        $"\n\n参照可能な最新ファクト：\n{bulletLines}\n- 上のファクトは事実関係として優先し、推測で上書きしないでください。"
+
 let needsMaleToneRewrite (text: string) =
     userGender = Male
     && [ "です"; "ます"; "ください"; "でしょう"; "ません"; "ました"; "ましょう"; "ください。" ]
@@ -1429,7 +1474,7 @@ let sendMessage (prefilledText: string option) =
                                         {| model = "claude-haiku-4-5-20251001"
                                            max_tokens = anthropicMaxTokens
                                            temperature = modelTemperature ()
-                                           system = SystemPrompt + genderPromptSuffix ()
+                                           system = SystemPrompt + genderPromptSuffix () + latestFactsPromptSuffix text
                                            messages = requestMessages |}) ]
                     )
 
@@ -1623,6 +1668,7 @@ let shell =
 
 let mount () =
     restoreUserGender ()
+    restoreLatestFacts ()
     let root = createRoot (document.getElementById "root")
     renderRoot root shell
     updateInputPlaceholder ()

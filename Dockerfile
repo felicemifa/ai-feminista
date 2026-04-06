@@ -28,6 +28,7 @@ ENV HOST=0.0.0.0
 WORKDIR /app
 
 COPY server.mjs ./
+COPY data ./data
 COPY --from=build /app/dist ./dist
 
 CMD ["node", "server.mjs"]

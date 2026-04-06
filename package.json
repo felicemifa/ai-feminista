@@ -7,6 +7,7 @@
     "postinstall": "dotnet tool restore",
     "dev": "dotnet fable watch --noRestore --run npx vite",
     "build": "dotnet fable --noRestore --configuration Release && vite build",
+    "update:latest-facts": "node scripts/update-latest-facts.mjs",
     "preview": "vite preview",
     "start": "node server.mjs",
     "start:local": "dotnet fable --noRestore --configuration Debug && node --env-file=.env.local server.mjs",

@@ -62,6 +62,23 @@ npm run build
 
 Fable CLI で F# を JavaScript に変換したあと、Vite が公開用成果物を `dist/` に出力します。`dist/` が存在すると、本番サーバーはそちらを優先して配信します。
 
+## 最新ファクトの更新
+
+女性関連の最新ファクトは [data/latest-facts.json](/Users/azumaharuka/opere/feminista/data/latest-facts.json) に保存します。今は Wikidata SPARQL API から
+
+- 日本の首相
+- 東京都知事
+
+を取得して、短い日本語メモへテンプレート整形するようにしてあります。
+
+更新コマンドはこれです。
+
+```bash
+npm run update:latest-facts
+```
+
+本番サーバーは起動時やページ読込時にこの JSON を読み、質問にキーワードが当たったときだけ Claude へ追加コンテキストとして渡します。会話中に Wikidata を直接見には行きません。
+
 ## 本番向けのポイント
 
 - API キーはブラウザへ渡さず、Node サーバー側だけで保持します

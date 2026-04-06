@@ -1,4 +1,4 @@
-import { createReadStream, existsSync } from "node:fs";
+import { createReadStream, existsSync, readFileSync } from "node:fs";
 import http from "node:http";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const distDir = path.join(__dirname, "dist");
+const latestFactsPath = path.join(__dirname, "data", "latest-facts.json");
 const host = process.env.HOST ?? "0.0.0.0";
 const port = Number.parseInt(process.env.PORT ?? "3000", 10);
 const minuteRateLimit = 8;
@@ -31,6 +32,26 @@ const mimeTypes = {
 
 function anthropicApiKey() {
   return process.env.ANTHROPIC_API_KEY ?? process.env.VITE_ANTHROPIC_API_KEY ?? "";
+}
+
+function latestFactsPayload() {
+  if (!existsSync(latestFactsPath)) {
+    return { updatedAt: null, facts: [] };
+  }
+
+  try {
+    const raw = readFileSync(latestFactsPath, "utf8");
+    const parsed = JSON.parse(raw);
+
+    if (!Array.isArray(parsed?.facts)) {
+      return { updatedAt: null, facts: [] };
+    }
+
+    return parsed;
+  } catch (error) {
+    console.error("[latest-facts] Failed to read latest-facts.json", error);
+    return { updatedAt: null, facts: [] };
+  }
 }
 
 function clientAddress(request) {
@@ -292,7 +313,10 @@ const server = http.createServer(async (request, response) => {
 
   if (request.method === "GET" && url.pathname =="/app-config.js") {
     response.writeHead(200, { "content-type": "application/javascript; charset=utf-8" });
-    response.end(`window.__ANTHROPIC_ENABLED__ = ${JSON.stringify(Boolean(anthropicApiKey()))};`);
+    response.end(
+      `window.__ANTHROPIC_ENABLED__ = ${JSON.stringify(Boolean(anthropicApiKey()))};\n`
+        + `window.__LATEST_FACTS__ = ${JSON.stringify(latestFactsPayload())};`
+    );
     return;
   }
 
