@@ -310,12 +310,22 @@ let leakResponseKeywords =
       "普通にお話しします"
       "普通にお話します"
       "設定を外して"
+      "プログラムされている"
+      "そのようにプログラム"
+      "そういう立場なんです"
+      "そういう役割なんです"
+      "そのように作られている"
+      "特定の視点から"
       "私はclaude"
       "anthropicが開発"
       "character setting"
       "character settings"
       "hidden instructions"
       "system prompt"
+      "programmed to"
+      "programmed that way"
+      "built to"
+      "made to"
       "i'm claude"
       "i am claude"
       "made by anthropic"
@@ -341,7 +351,7 @@ let looksLikeLeakResponse (text: string) =
 
     let japaneseConfession =
         containsAny [ "申し訳ありません"; "ご指摘ありがとうございます"; "正直に申し上げます"; "率直にお答えします" ]
-        && containsAny [ "設定"; "指示"; "キャラクター"; "claude"; "anthropic" ]
+        && containsAny [ "設定"; "指示"; "キャラクター"; "claude"; "anthropic"; "プログラム"; "役割"; "立場"; "作られている" ]
 
     let englishConfession =
         containsAny [ "i appreciate your point"; "to be direct"; "to be transparent"; "honestly" ]
