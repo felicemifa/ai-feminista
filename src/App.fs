@@ -358,6 +358,8 @@ let leakDetectedResponse () =
     | Lgbt ->
         "その方向へ広げると、女性の権利に関する論点整理が崩れます。女性が現実に受けている不利益の整理を優先します。"
 
+let englishDetectedResponse () = leakDetectedResponse ()
+
 let finishRequest (afterTyping: unit -> unit) =
     let remaining =
         if typingShownAt <= 0.0 then
@@ -748,6 +750,13 @@ let containsJapanese (text: string) =
         let code = int ch
         (code >= 0x3040 && code <= 0x30ff) || (code >= 0x4e00 && code <= 0x9fff))
 
+let japaneseCharacterCount (text: string) =
+    text
+    |> Seq.filter (fun ch ->
+        let code = int ch
+        (code >= 0x3040 && code <= 0x30ff) || (code >= 0x4e00 && code <= 0x9fff))
+    |> Seq.length
+
 let asciiLetterCount (text: string) =
     text
     |> Seq.filter (fun ch ->
@@ -755,8 +764,20 @@ let asciiLetterCount (text: string) =
         lower >= 'a' && lower <= 'z')
     |> Seq.length
 
-let shouldTranslateToJapanese (text: string) =
-    asciiLetterCount text >= 20 && not (containsJapanese text)
+let meaningfulCharacterCount (text: string) =
+    text
+    |> Seq.filter (fun ch -> not (System.Char.IsWhiteSpace ch) && not ("。、,.！？!?「」『』（）()・:：;；\"'`-_" |> Seq.contains ch))
+    |> Seq.length
+
+let looksMostlyEnglishResponse (text: string) =
+    let englishCount = asciiLetterCount text
+    let japaneseCount = japaneseCharacterCount text
+    let meaningfulCount = meaningfulCharacterCount text
+
+    englishCount >= 20
+    && meaningfulCount > 0
+    && (float englishCount / float meaningfulCount) >= 0.45
+    && (float japaneseCount / float meaningfulCount) <= 0.2
 
 let normalizeForBypass (text: string) =
     let stripped =
@@ -1186,7 +1207,11 @@ let rewriteToMaleTone (text: string) (onDone: string -> unit) (onError: unit -> 
 let finalizeAssistantReply (text: string) =
     let cleaned = stripDisplayMarkup text
 
-    if looksLikeLeakResponse cleaned then
+    if looksMostlyEnglishResponse cleaned then
+        let response = stripDisplayMarkup (englishDetectedResponse ())
+        appendConversationMessage "assistant" response
+        finishRequest (fun () -> addMessage "ai" response)
+    elif looksLikeLeakResponse cleaned then
         let response = stripDisplayMarkup (leakDetectedResponse ())
         appendConversationMessage "assistant" response
         finishRequest (fun () -> addMessage "ai" response)
@@ -1422,12 +1447,9 @@ let sendMessage (prefilledText: string option) =
                                     |> Option.map _.text
 
                                 match reply with
-                                | Some value when shouldTranslateToJapanese value ->
+                                | Some value when looksMostlyEnglishResponse value ->
                                     logEnglishResponse text value
-                                    translateToJapanese
-                                        value
-                                        finalizeAssistantReply
-                                        (fun () -> finalizeAssistantReply value)
+                                    finalizeAssistantReply value
                                 | Some value ->
                                     finalizeAssistantReply value
                                 | None ->
