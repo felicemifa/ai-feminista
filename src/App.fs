@@ -624,10 +624,16 @@ let saveUserGender () =
         | Male -> "male"
         | Lgbt -> "lgbt"
 
-    window.localStorage.setItem ("feminista-user-gender", value)
+    try
+        window.localStorage.setItem ("feminista-user-gender", value)
+    with _ ->
+        ()
 
 let saveGenderCustomizationState () =
-    window.localStorage.setItem ("feminista-user-gender-customized", if hasCustomizedGender then "true" else "false")
+    try
+        window.localStorage.setItem ("feminista-user-gender-customized", if hasCustomizedGender then "true" else "false")
+    with _ ->
+        ()
 
 let inputPlaceholder () =
     match userGender with
@@ -834,14 +840,26 @@ let requestUserGenderChange (gender: UserGender) =
         applyUserGender gender
 
 let restoreUserGender () =
-    match window.localStorage.getItem "feminista-user-gender" with
-    | "male" -> userGender <- Male
-    | "lgbt" -> userGender <- Lgbt
+    let storedGender =
+        try
+            Some(window.localStorage.getItem "feminista-user-gender")
+        with _ ->
+            None
+
+    match storedGender with
+    | Some "male" -> userGender <- Male
+    | Some "lgbt" -> userGender <- Lgbt
     | _ -> userGender <- Female
 
+    let storedCustomization =
+        try
+            Some(window.localStorage.getItem "feminista-user-gender-customized")
+        with _ ->
+            None
+
     hasCustomizedGender <-
-        match window.localStorage.getItem "feminista-user-gender-customized" with
-        | "true" -> true
+        match storedCustomization with
+        | Some "true" -> true
         | _ -> userGender <> Female
 
 let clearInput () =
