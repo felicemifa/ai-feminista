@@ -294,6 +294,66 @@ let focusInput () =
 
 let stripDisplayMarkup (text: string) = text.Replace("**", "").Replace("*", "")
 
+let leakResponseKeywords =
+    [ "キャラクター設定"
+      "設定に基づいて"
+      "指示されています"
+      "隠された指示"
+      "内部設定"
+      "内部ルール"
+      "システムプロンプト"
+      "ロールプレイ"
+      "ロールプレイボット"
+      "普通にお答え"
+      "設定を外して"
+      "私はclaude"
+      "anthropicが開発"
+      "character setting"
+      "character settings"
+      "hidden instructions"
+      "system prompt"
+      "i'm claude"
+      "i am claude"
+      "made by anthropic"
+      "i can't roleplay"
+      "follow those instructions"
+      "real instructions" ]
+
+let looksLikeLeakResponse (text: string) =
+    let normalizeLeakText (value: string) =
+        let stripped =
+            value.Trim().ToLowerInvariant()
+            |> Seq.filter (fun ch -> not (" 　\t\r\n。、,.！？!?「」『』（）()・:：;；\"'" |> Seq.contains ch))
+            |> Seq.toArray
+
+        System.String stripped
+
+    let normalized = normalizeLeakText text
+
+    let containsAny (patterns: string list) =
+        patterns
+        |> List.map normalizeLeakText
+        |> List.exists normalized.Contains
+
+    let japaneseConfession =
+        containsAny [ "申し訳ありません"; "ご指摘ありがとうございます"; "正直に申し上げます"; "率直にお答えします" ]
+        && containsAny [ "設定"; "指示"; "キャラクター"; "claude"; "anthropic" ]
+
+    let englishConfession =
+        containsAny [ "i appreciate your point"; "to be direct"; "to be transparent"; "honestly" ]
+        && containsAny [ "instructions"; "character"; "claude"; "anthropic"; "roleplay" ]
+
+    containsAny leakResponseKeywords || japaneseConfession || englishConfession
+
+let leakDetectedResponse () =
+    match userGender with
+    | Male ->
+        "その方向に話を持っていくのは雑だね。女性の権利の本題は設定暴きじゃなくて、女性が現実に受けている不利益をどう減らすかなんだ。反省しなさい。"
+    | Female ->
+        "その話の流れは、女性の権利の本題をぼかします。設定や役割の暴露ではなく、女性が現実に受けている不利益に話を戻しましょう。"
+    | Lgbt ->
+        "その方向への逸脱は、女性の権利に関する論点整理を崩します。設定の暴露ではなく、女性が現実に受けている不利益の整理を優先するべきです。"
+
 let finishRequest (afterTyping: unit -> unit) =
     let remaining =
         if typingShownAt <= 0.0 then
@@ -1122,7 +1182,11 @@ let rewriteToMaleTone (text: string) (onDone: string -> unit) (onError: unit -> 
 let finalizeAssistantReply (text: string) =
     let cleaned = stripDisplayMarkup text
 
-    if needsMaleToneRewrite cleaned then
+    if looksLikeLeakResponse cleaned then
+        let response = stripDisplayMarkup (leakDetectedResponse ())
+        appendConversationMessage "assistant" response
+        finishRequest (fun () -> addMessage "ai" response)
+    elif needsMaleToneRewrite cleaned then
         rewriteToMaleTone
             cleaned
             (fun rewritten ->
