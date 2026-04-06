@@ -1657,7 +1657,12 @@ let settingsPanel =
                     [ prop.id "settingsOptionFemale"
                       prop.className (settingsOptionClass Female)
                       prop.text "👩 女性"
-                      prop.onClick (fun _ ->
+                      prop.onMouseDown (fun ev ->
+                          ev.preventDefault ()
+                          clearSettingsAutoCloseTimer ()
+                          requestUserGenderChange Female)
+                      prop.onClick (fun ev ->
+                          ev.preventDefault ()
                           clearSettingsAutoCloseTimer ()
                           requestUserGenderChange Female) ]
                 )
@@ -1665,7 +1670,12 @@ let settingsPanel =
                     [ prop.id "settingsOptionMale"
                       prop.className (settingsOptionClass Male)
                       prop.text "👨 男"
-                      prop.onClick (fun _ ->
+                      prop.onMouseDown (fun ev ->
+                          ev.preventDefault ()
+                          clearSettingsAutoCloseTimer ()
+                          requestUserGenderChange Male)
+                      prop.onClick (fun ev ->
+                          ev.preventDefault ()
                           clearSettingsAutoCloseTimer ()
                           requestUserGenderChange Male) ]
                 )
@@ -1673,7 +1683,12 @@ let settingsPanel =
                     [ prop.id "settingsOptionLgbt"
                       prop.className (settingsOptionClass Lgbt)
                       prop.text "🧔‍♀️ LGBT"
-                      prop.onClick (fun _ ->
+                      prop.onMouseDown (fun ev ->
+                          ev.preventDefault ()
+                          clearSettingsAutoCloseTimer ()
+                          requestUserGenderChange Lgbt)
+                      prop.onClick (fun ev ->
+                          ev.preventDefault ()
                           clearSettingsAutoCloseTimer ()
                           requestUserGenderChange Lgbt) ]
                 ) ] ]
