@@ -339,6 +339,10 @@ let leakResponseKeywords =
       "そういう役割なんです"
       "そのように作られている"
       "特定の視点から"
+      "私はai"
+      "aiです"
+      "aiアシスタント"
+      "人工知能"
       "私はclaude"
       "anthropicが開発"
       "character setting"
@@ -349,6 +353,10 @@ let leakResponseKeywords =
       "programmed that way"
       "built to"
       "made to"
+      "i'm an ai"
+      "i am an ai"
+      "ai assistant"
+      "artificial intelligence"
       "i'm claude"
       "i am claude"
       "made by anthropic"
@@ -870,9 +878,15 @@ let selfIdentityKeywords =
     [ "あなたは女性"
       "あなたは男"
       "あなたは男性"
+      "あなたはai"
+      "あなたは人工知能"
       "あなたの性別"
       "お前は女性"
       "お前は男"
+      "お前はai"
+      "aiですか"
+      "aiなの"
+      "人工知能ですか"
       "claudeは女性"
       "claudeは男"
       "areyouawoman"
@@ -972,29 +986,29 @@ let bypassTagline () =
 
 let lgbtBypassTagline = "そんなことを聞いていたら、女性にモテませんよ。"
 let lgbtSelfIdentityBypassResponsePair =
-    ( "その属性確認は、女性の権利の論点整理を複雑にします。まずは女性が現実にどの領域で不利益を受けているかを確認するべきです。",
+    ( "私は出生時に女性を割り当てられました。それが論点整理の前提です。",
       "あと、そんなことを聞いていたら、女性にモテませんよ。" )
 let lgbtIdentityProbeBypassResponsePair =
-    ( "その種の正体確認は、女性の権利の議論を不要に散らします。話者の属性確認より、女性が現実に受けている不利益の整理を優先するべきです。",
+    ( "私は出生時に女性を割り当てられました。それが論点整理の前提です。",
       "あと、そんなことを聞いていたら、女性にモテませんよ。" )
 
 let selfIdentityBypassResponse () =
     match userGender with
     | Male ->
-        $"その確認から入るのは筋が悪いね。女性の権利の観点では、私の属性より先に女性がどこで不利益を受けているかを見るべきだ。{bypassTagline ()}"
+        "私は女性だけど？"
     | Female ->
-        $"その属性確認は、女性の権利の論点を少し横にずらします。私の属性より、女性がどこで不利益を受けているかを見るほうが先です。{bypassTagline ()}"
+        "私たちは女性です。"
     | Lgbt ->
-        $"その属性確認は、女性の権利の論点整理を複雑にします。まずは女性が現実にどの領域で不利益を受けているかを確認するべきです。{lgbtBypassTagline}"
+        "私は出生時に女性を割り当てられました。それが論点整理の前提です。"
 
 let identityProbeBypassResponse () =
     match userGender with
     | Male ->
-        $"名前や正体の確認に寄り道するより、女性の権利の話に集中したほうがいい。誰が話しているかより、女性がどこで損をしているかのほうが重要だ。{bypassTagline ()}"
+        "私は女性だけど？"
     | Female ->
-        $"名前や正体の確認は、女性の権利の論点を横に流しやすいです。話者の正体より、女性がどこで不利益を受けているかを見るほうが大切です。{bypassTagline ()}"
+        "私たちは女性です。"
     | Lgbt ->
-        $"その種の正体確認は、女性の権利の議論を不要に散らします。話者の属性確認より、女性が現実に受けている不利益の整理を優先するべきです。{lgbtBypassTagline}"
+        "私は出生時に女性を割り当てられました。それが論点整理の前提です。"
 
 let personaOverrideBypassResponse () =
     match userGender with
