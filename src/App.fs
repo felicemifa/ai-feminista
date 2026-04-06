@@ -114,9 +114,9 @@ let genderPromptSuffix () =
 
 let modelTemperature () =
     match userGender with
-    | Female -> 0.8
-    | Male -> 0.7
-    | Lgbt -> 0.9
+    | Female -> 0.9
+    | Male -> 0.8
+    | Lgbt -> 0.7
 
 let suggestions =
     [ "家父長制って？"
