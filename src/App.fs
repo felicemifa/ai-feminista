@@ -598,6 +598,10 @@ let closeSettingsPanel () =
     | Some panel -> panel.classList.remove "open"
     | None -> ()
 
+    match tryElementById<HTMLElement> "settingsBackdrop" with
+    | Some backdrop -> backdrop.classList.remove "open"
+    | None -> ()
+
 let resetSettingsAutoCloseTimer () =
     clearSettingsAutoCloseTimer ()
 
@@ -615,6 +619,10 @@ let openSettingsPanel () =
     | Some panel ->
         panel.classList.add "open"
         resetSettingsAutoCloseTimer ()
+    | None -> ()
+
+    match tryElementById<HTMLElement> "settingsBackdrop" with
+    | Some backdrop -> backdrop.classList.add "open"
     | None -> ()
 
 let settingsOptionClass (gender: UserGender) =
@@ -798,9 +806,6 @@ let applyUserGender (gender: UserGender) =
             resizeTextArea input
         | None -> ()
         setSendButtonDisabled false
-        match tryElementById<HTMLDivElement> "errorArea" with
-        | Some area -> area.innerHTML <- ""
-        | None -> ()
         resetChatView ()
         refreshUserAvatars ()
         updateInputPlaceholder ()
@@ -1643,7 +1648,7 @@ let welcomeView =
                                      prop.text text
                                      prop.onClick (fun _ -> sendMessage (Some text)) ])) ] ] ]
 
-let settingsPanel =
+let settingsPanel () =
     Html.div
         [ prop.className "settings-panel"
           prop.id "settingsPanel"
@@ -1656,44 +1661,35 @@ let settingsPanel =
                 Html.button (
                     [ prop.id "settingsOptionFemale"
                       prop.className (settingsOptionClass Female)
-                      prop.text "👩 女性"
-                      prop.onMouseDown (fun ev ->
-                          ev.preventDefault ()
+                      prop.onClick (fun _ ->
                           clearSettingsAutoCloseTimer ()
                           requestUserGenderChange Female)
-                      prop.onClick (fun ev ->
-                          ev.preventDefault ()
-                          clearSettingsAutoCloseTimer ()
-                          requestUserGenderChange Female) ]
+                      prop.text "👩 女性" ]
                 )
                 Html.button (
                     [ prop.id "settingsOptionMale"
                       prop.className (settingsOptionClass Male)
-                      prop.text "👨 男"
-                      prop.onMouseDown (fun ev ->
-                          ev.preventDefault ()
+                      prop.onClick (fun _ ->
                           clearSettingsAutoCloseTimer ()
                           requestUserGenderChange Male)
-                      prop.onClick (fun ev ->
-                          ev.preventDefault ()
-                          clearSettingsAutoCloseTimer ()
-                          requestUserGenderChange Male) ]
+                      prop.text "👨 男" ]
                 )
                 Html.button (
                     [ prop.id "settingsOptionLgbt"
                       prop.className (settingsOptionClass Lgbt)
-                      prop.text "🧔‍♀️ LGBT"
-                      prop.onMouseDown (fun ev ->
-                          ev.preventDefault ()
+                      prop.onClick (fun _ ->
                           clearSettingsAutoCloseTimer ()
                           requestUserGenderChange Lgbt)
-                      prop.onClick (fun ev ->
-                          ev.preventDefault ()
-                          clearSettingsAutoCloseTimer ()
-                          requestUserGenderChange Lgbt) ]
+                      prop.text "🧔‍♀️ LGBT" ]
                 ) ] ]
 
-let genderChallengeOverlay =
+let settingsBackdrop () =
+    Html.div
+        [ prop.className "settings-backdrop"
+          prop.id "settingsBackdrop"
+          prop.onClick (fun _ -> closeSettingsPanel ()) ]
+
+let genderChallengeOverlay () =
     Html.div
         [ prop.className "gender-challenge-overlay"
           prop.id "genderChallengeOverlay"
@@ -1727,7 +1723,7 @@ let genderChallengeOverlay =
                                               prop.text "確認"
                                               prop.onClick (fun _ -> confirmGenderChallenge ()) ] ] ] ] ] ] ]
 
-let shell =
+let shell () =
     Html.div
         [ prop.className "app-shell"
           prop.children
@@ -1750,8 +1746,9 @@ let shell =
                                                   match tryElementById<HTMLElement> "settingsPanel" with
                                                   | Some panel when panel.classList.contains "open" -> closeSettingsPanel ()
                                                   | _ -> openSettingsPanel ())
-                                              prop.text "設定" ]
-                                        settingsPanel ] ] ] ]
+                                              prop.text "設定" ] ] ] ] ]
+                settingsBackdrop ()
+                settingsPanel ()
                 Html.div
                     [ prop.className "chat-area"
                       prop.id "chatArea"
@@ -1781,13 +1778,13 @@ let shell =
                             Html.div
                                 [ prop.className "footer-note"
                                   prop.text "AI Feminista, built with F♯ and Feliz" ] ] ]
-                genderChallengeOverlay ] ]
+                genderChallengeOverlay () ] ]
 
 let mount () =
     restoreUserGender ()
     restoreLatestFacts ()
     let root = createRoot (document.getElementById "root")
-    renderRoot root shell
+    renderRoot root (shell ())
     updateInputPlaceholder ()
     updateSettingsSelection ()
 
