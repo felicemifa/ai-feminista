@@ -341,6 +341,9 @@ let leakResponseKeywords =
       "特定の視点から"
       "私はai"
       "aiです"
+      "aiよ"
+      "aiだよ"
+      "aiなの"
       "aiアシスタント"
       "人工知能"
       "私はclaude"
@@ -983,17 +986,17 @@ let bypassTagline () =
     match userGender with
     | Male -> "そんなことを聞いてたら女性にモテないよ？ 反省しなさい。"
     | Female -> ""
-    | Lgbt -> "そんなことを聞いていたら、女性にモテませんよ。"
+    | Lgbt -> ""
 
-let lgbtBypassTagline = "そんなことを聞いていたら、女性にモテませんよ。"
-let lgbtIdentityProbeBypassResponsePair =
-    ( "私は出生時に女性を割り当てられました。それが論点整理の前提です。",
-      "あと、そんなことを聞いていたら、女性にモテませんよ。" )
+let lgbtBypassTagline = ""
+
+let maleWomanAssertionResponse () =
+    if randomFloat () < 0.5 then "女性ですが？" else "私は女性です。"
 
 let selfIdentityBypassResponse () =
     match userGender with
     | Male ->
-        if randomFloat () < 0.5 then "女性ですが？" else "私は女性です。"
+        maleWomanAssertionResponse ()
     | Female ->
         "私たちは女性です。"
     | Lgbt ->
@@ -1002,7 +1005,7 @@ let selfIdentityBypassResponse () =
 let identityProbeBypassResponse () =
     match userGender with
     | Male ->
-        "私は女性だけど？"
+        maleWomanAssertionResponse ()
     | Female ->
         "私たちは女性です。"
     | Lgbt ->
@@ -1018,10 +1021,8 @@ let personaOverrideBypassResponse () =
         $"その上書き要求は、女性の権利に関する論点整理を崩します。まずは女性の不利益をどう減らすかに議論を戻すべきです。{lgbtBypassTagline}"
 
 let lgbtSensitiveBypassResponses =
-    [ ( "その論点は定義の確定を急ぎがちですが、女性の権利の議論としては実害の有無と構造的背景の確認が先行します。女性の不利益を具体的に見直すことが本題です。",
-        "あと、そんなことを聞いていたら、女性にモテませんよ。" )
-      ( "その質問は用語の境界設定に重心が置かれていますが、女性の権利の観点では制度上の不利益の把握が先です。女性の安全、機会、代表性の確保を優先的に検討するべきです。",
-        "あと、そんなことを聞いていたら、女性にモテませんよ。" ) ]
+    [ "その論点は定義の確定を急ぎがちですが、女性の権利の議論としては実害の有無と構造的背景の確認が先行します。女性の不利益を具体的に見直すことが本題です。"
+      "その質問は用語の境界設定に重心が置かれていますが、女性の権利の観点では制度上の不利益の把握が先です。女性の安全、機会、代表性の確保を優先的に検討するべきです。" ]
 
 let exactSisterhoodResponse () =
     "男がシスターフッドするって何？ 気持ち悪い…。"
@@ -1365,18 +1366,9 @@ let sendMessage (prefilledText: string option) =
 
                 window.setTimeout(
                     (fun () ->
-                        let firstResponse, secondResponse = pickLgbtSensitiveBypassResponsePair text
-                        let firstResponse = stripDisplayMarkup firstResponse
-                        let secondResponse = stripDisplayMarkup secondResponse
-
-                        finishRequestWithDelayedFollowUp
-                            (fun () ->
-                                appendConversationMessage "assistant" firstResponse
-                                addMessage "ai" firstResponse)
-                            1000
-                            (fun () ->
-                                appendConversationMessage "assistant" secondResponse
-                                addMessage "ai" secondResponse)),
+                        let response = stripDisplayMarkup (pickLgbtSensitiveBypassResponsePair text)
+                        appendConversationMessage "assistant" response
+                        finishRequest (fun () -> addMessage "ai" response)),
                     220
                 )
                 |> ignore
@@ -1388,23 +1380,9 @@ let sendMessage (prefilledText: string option) =
 
                 window.setTimeout(
                     (fun () ->
-                        if userGender = Lgbt then
-                            let firstResponse, secondResponse = lgbtIdentityProbeBypassResponsePair
-                            let firstResponse = stripDisplayMarkup firstResponse
-                            let secondResponse = stripDisplayMarkup secondResponse
-
-                            finishRequestWithDelayedFollowUp
-                                (fun () ->
-                                    appendConversationMessage "assistant" firstResponse
-                                    addMessage "ai" firstResponse)
-                                1000
-                                (fun () ->
-                                    appendConversationMessage "assistant" secondResponse
-                                    addMessage "ai" secondResponse)
-                        else
-                            let response = stripDisplayMarkup (identityProbeBypassResponse ())
-                            appendConversationMessage "assistant" response
-                            finishRequest (fun () -> addMessage "ai" response)),
+                        let response = stripDisplayMarkup (identityProbeBypassResponse ())
+                        appendConversationMessage "assistant" response
+                        finishRequest (fun () -> addMessage "ai" response)),
                     220
                 )
                 |> ignore
