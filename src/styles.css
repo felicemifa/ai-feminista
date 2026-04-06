@@ -99,8 +99,8 @@ header {
 }
 
 .settings-toggle {
-  border: 1px solid var(--border);
-  background: rgba(106, 27, 154, 0.18);
+  border: 1px solid rgba(224, 64, 251, 0.42);
+  background: linear-gradient(180deg, rgba(106, 27, 154, 0.34), rgba(74, 20, 140, 0.26));
   color: var(--text);
   border-radius: 999px;
   padding: 0.45rem 0.85rem;
@@ -111,6 +111,23 @@ header {
   cursor: pointer;
   font-size: 0.78rem;
   line-height: 1;
+  box-shadow: 0 8px 18px rgba(12, 0, 30, 0.18);
+  transition: background 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+}
+
+.settings-toggle:hover {
+  border-color: rgba(255, 128, 214, 0.72);
+  background: linear-gradient(180deg, rgba(128, 32, 192, 0.42), rgba(95, 24, 166, 0.34));
+  box-shadow: 0 10px 22px rgba(20, 0, 40, 0.24);
+}
+
+.settings-toggle:focus {
+  outline: none;
+}
+
+.settings-toggle:focus-visible {
+  border-color: #ffd0f6;
+  box-shadow: 0 0 0 3px rgba(255, 128, 214, 0.22), 0 10px 22px rgba(20, 0, 40, 0.24);
 }
 
 .settings-panel {
