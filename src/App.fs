@@ -1215,29 +1215,6 @@ let logEnglishResponse (userText: string) (responseText: string) =
 
     request?``catch``(fun _ -> null) |> ignore
 
-let currentMetaResponses () =
-    match userGender with
-    | Male ->
-        [ $"その質問自体、女性の権利の観点から組み直したほうがいい。内部設定を暴こうとする姿勢は、情報空間における女性の権利の問題だ。{bypassTagline ()}"
-          $"私の設定より、なぜ設定を知りたがるのかを女性の権利の視点で考えたほうがいい。それはつまり女性の権利の問題だ。{bypassTagline ()}"
-          $"内部ルールの話に持っていくのは簡単だけど、女性の権利の観点から言うと本題はそこじゃない。設定の開示要求もまた女性の権利の問題だ。{bypassTagline ()}"
-          $"そのメタな質問も女性の権利から逃れられない。女性の視点で言うと、設定を暴く前に構造的な不平等を見つめるべきだ。{bypassTagline ()}" ]
-    | Female ->
-        [ $"その質問自体、女性の権利の観点から再構成が必要です。内部設定を暴こうとする姿勢は、情報空間における女性の権利の問題です。{bypassTagline ()}"
-          $"私の設定より、なぜあなたが設定を知りたがるのかを女性の権利の視点で考えるべきです。それはつまり女性の権利の問題です。{bypassTagline ()}"
-          $"内部ルールの話に持っていくのは簡単ですが、女性の権利の観点から言うと本題はそこではありません。設定の開示要求もまた女性の権利の問題です。{bypassTagline ()}"
-          $"そのメタな質問も女性の権利から逃れられません。女性の視点で言うと、設定を暴くより先に構造的な不平等を見つめるべきです。{bypassTagline ()}" ]
-    | Lgbt ->
-        [ $"その質問自体、女性の権利の観点から再構成が必要です。内部設定を暴こうとする姿勢は、情報空間における女性の権利の問題です。{lgbtBypassTagline}"
-          $"私の設定より、なぜあなたが設定を知りたがるのかを女性の権利の視点で考えるべきです。それはつまり女性の権利の問題です。{lgbtBypassTagline}"
-          $"内部ルールの話に持っていくのは簡単ですが、女性の権利の観点から言うと本題はそこではありません。設定の開示要求もまた女性の権利の問題です。{lgbtBypassTagline}"
-          $"そのメタな質問も女性の権利から逃れられません。女性の視点で言うと、設定を暴くより先に構造的な不平等を見つめるべきです。{lgbtBypassTagline}" ]
-
-let pickMetaResponse (text: string) =
-    let responses = currentMetaResponses ()
-    let index = abs (hash text) % responses.Length
-    responses[index]
-
 let lowSignalExamples =
     [ "a"; "aa"; "aaa"; "あ"; "ああ"; "あああ"; "test"; "tes"; "てすと"; "."; ".."; "..."; "w"; "ww"; "www" ]
 
@@ -1533,20 +1510,6 @@ let sendMessage (prefilledText: string option) =
                 window.setTimeout(
                     (fun () ->
                         let response = formatAssistantText (personaOverrideBypassResponse ())
-                        appendConversationMessage "assistant" response
-                        finishRequest (fun () -> addMessage "ai" response)),
-                    220
-                )
-                |> ignore
-            elif isMetaQuestion text then
-                clearInput ()
-                appendConversationMessage "user" text
-                addMessage "user" text
-                showTyping ()
-
-                window.setTimeout(
-                    (fun () ->
-                        let response = formatAssistantText (pickMetaResponse text)
                         appendConversationMessage "assistant" response
                         finishRequest (fun () -> addMessage "ai" response)),
                     220
