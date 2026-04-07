@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-04-07T17:26:14+09:00",
+  "updatedAt": "2026-04-07T17:59:05+09:00",
   "facts": [
     {
       "id": "jp-prime-minister",
@@ -32,6 +32,50 @@
       "source": "Wikidata",
       "sourceUrl": "http://www.wikidata.org/entity/Q261703",
       "notes": "女性首長や政治参加の話題で参照"
+    },
+    {
+      "id": "gender-gap-japan",
+      "title": "日本のジェンダーギャップ指数",
+      "keywords": [
+        "ジェンダーギャップ",
+        "ジェンダーギャップ指数",
+        "日本のジェンダーギャップ",
+        "日本の順位",
+        "最新ランキング"
+      ],
+      "summary": "2025年のジェンダーギャップ指数で、日本は118位、スコアは66.6%です。",
+      "asOf": "2026-04-07",
+      "source": "World Economic Forum",
+      "sourceUrl": "https://www.weforum.org/publications/global-gender-gap-report-2025/in-full/benchmarking-gender-gaps-2025/",
+      "notes": "ジェンダーギャップ指数や日本の順位の話題で参照"
+    },
+    {
+      "id": "gender-gap-top-performers",
+      "title": "ジェンダーギャップ指数の上位国",
+      "keywords": [
+        "ジェンダーギャップ",
+        "ジェンダーギャップ指数",
+        "上位の国",
+        "上位国",
+        "トップ10",
+        "トップ国",
+        "最新ランキング",
+        "アイスランド",
+        "フィンランド",
+        "ノルウェー",
+        "イギリス",
+        "ニュージーランド",
+        "スウェーデン",
+        "モルドバ",
+        "ナミビア",
+        "ドイツ",
+        "アイルランド"
+      ],
+      "summary": "2025年のジェンダーギャップ指数トップ10は、1位アイスランド、2位フィンランド、3位ノルウェー、4位イギリス、5位ニュージーランド、6位スウェーデン、7位モルドバ、8位ナミビア、9位ドイツ、10位アイルランドです。",
+      "asOf": "2026-04-07",
+      "source": "World Economic Forum",
+      "sourceUrl": "https://www.weforum.org/press/2025/06/gender-gap-closes-at-fastest-rate-since-pandemic-but-full-parity-still-over-a-century-away/",
+      "notes": "ジェンダーギャップ指数の上位国や最新ランキングの話題で参照"
     }
   ]
 }
