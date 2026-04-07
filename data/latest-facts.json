@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-04-07T18:10:27+09:00",
+  "updatedAt": "2026-04-07T18:16:51+09:00",
   "facts": [
     {
       "id": "jp-prime-minister",
@@ -44,7 +44,7 @@
         "ジェンダーギャップの最新ランキング",
         "ジェンダーギャップ指数の最新ランキング"
       ],
-      "summary": "2025年のジェンダーギャップ指数で、日本は118位、スコアは66.6%です。",
+      "summary": "2025年のジェンダーギャップ指数で、日本は118位です。",
       "asOf": "2026-04-07",
       "source": "World Economic Forum",
       "sourceUrl": "https://www.weforum.org/publications/global-gender-gap-report-2025/in-full/benchmarking-gender-gaps-2025/",

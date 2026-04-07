@@ -13,18 +13,17 @@ const wefTopPerformersUrl =
   "https://www.weforum.org/press/2025/06/gender-gap-closes-at-fastest-rate-since-pandemic-but-full-parity-still-over-a-century-away/";
 const genderGapYear = "2025";
 const genderGapJapanRank = "118";
-const genderGapJapanScore = "66.6%";
 const genderGapTopTen = [
-  { rank: 1, country: "アイスランド", score: "92.6%" },
-  { rank: 2, country: "フィンランド", score: "87.9%" },
-  { rank: 3, country: "ノルウェー", score: "86.3%" },
-  { rank: 4, country: "イギリス", score: "83.8%" },
-  { rank: 5, country: "ニュージーランド", score: "82.7%" },
-  { rank: 6, country: "スウェーデン", score: "81.7%" },
-  { rank: 7, country: "モルドバ", score: "81.3%" },
-  { rank: 8, country: "ナミビア", score: "81.1%" },
-  { rank: 9, country: "ドイツ", score: "80.3%" },
-  { rank: 10, country: "アイルランド", score: "80.1%" }
+  { rank: 1, country: "アイスランド" },
+  { rank: 2, country: "フィンランド" },
+  { rank: 3, country: "ノルウェー" },
+  { rank: 4, country: "イギリス" },
+  { rank: 5, country: "ニュージーランド" },
+  { rank: 6, country: "スウェーデン" },
+  { rank: 7, country: "モルドバ" },
+  { rank: 8, country: "ナミビア" },
+  { rank: 9, country: "ドイツ" },
+  { rank: 10, country: "アイルランド" }
 ];
 
 function todayIsoJst() {
@@ -132,7 +131,7 @@ function buildTokyoGovernorFact(binding) {
   };
 }
 
-function buildGenderGapJapanFact({ year, rank, score }) {
+function buildGenderGapJapanFact({ year, rank }) {
   return {
     id: "gender-gap-japan",
     title: "日本のジェンダーギャップ指数",
@@ -144,7 +143,7 @@ function buildGenderGapJapanFact({ year, rank, score }) {
       "ジェンダーギャップの最新ランキング",
       "ジェンダーギャップ指数の最新ランキング"
     ],
-    summary: `${year}年のジェンダーギャップ指数で、日本は${rank}位、スコアは${score}です。`,
+    summary: `${year}年のジェンダーギャップ指数で、日本は${rank}位です。`,
     asOf: todayIsoJst(),
     source: "World Economic Forum",
     sourceUrl: wefJapanUrl,
@@ -184,8 +183,7 @@ async function fetchGenderGapFacts() {
   return [
     buildGenderGapJapanFact({
       year: genderGapYear,
-      rank: genderGapJapanRank,
-      score: genderGapJapanScore
+      rank: genderGapJapanRank
     }),
     buildGenderGapTopFact({
       year: genderGapYear,
